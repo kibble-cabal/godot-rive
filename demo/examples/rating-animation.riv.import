@@ -1,0 +1,14 @@
+[remap]
+
+importer="addon.rive.importer"
+type="Resource"
+uid="uid://d36e4yq5j8bi6"
+path="res://.godot/imported/rating-animation.riv-d67c2aca63cde0e60517b2c0889c8caf.txt"
+
+[deps]
+
+source_file="res://examples/rating-animation.riv"
+dest_files=["res://.godot/imported/rating-animation.riv-d67c2aca63cde0e60517b2c0889c8caf.txt"]
+
+[params]
+

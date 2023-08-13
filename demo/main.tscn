@@ -1,0 +1,18 @@
+[gd_scene load_steps=2 format=3 uid="uid://flvlh6pj467t"]
+
+[ext_resource type="Script" path="res://main.gd" id="1_okfv8"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_okfv8")
+
+[node name="RiveNode" type="RiveNode" parent="."]
+filename = "res://examples/rating-animation.riv"
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0

@@ -20,7 +20,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="RiveViewer" type="RiveViewer" parent="."]
-path = "res://examples/joystick.riv"
+path = "res://examples/off_road_car.riv"
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

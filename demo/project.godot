@@ -21,7 +21,7 @@ project/assembly_name="Rive Extension"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/rive_file_importer/plugin.cfg")
+enabled=PackedStringArray()
 
 [rendering]
 

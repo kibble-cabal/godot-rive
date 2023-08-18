@@ -12,6 +12,7 @@ BinPackParameters: false
 BreakBeforeBinaryOperators: All
 BreakBeforeTernaryOperators: true
 BreakInheritanceList: AfterColon
+Cpp11BracedListStyle: false
 IndentCaseLabels: true
 IndentExternBlock: true
 NamespaceIndentation: All

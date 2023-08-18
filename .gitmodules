@@ -1,3 +1,9 @@
 [submodule "godot-cpp"]
 	path = godot-cpp
 	url = https://github.com/godotengine/godot-cpp.git
+[submodule "thirdparty/rive-cpp"]
+	path = thirdparty/rive-cpp
+	url = https://github.com/rive-app/rive-cpp.git
+[submodule "thirdparty/thorvg"]
+	path = thirdparty/thorvg
+	url = https://github.com/thorvg/thorvg.git

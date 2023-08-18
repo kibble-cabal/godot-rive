@@ -17,7 +17,7 @@ It makes use of the following third-party libraries:
 ### 1. Build rive-cpp
 1. Install scons, if not already installed
 2. Update the submodule (`git submodule update thirdparty/rive-cpp`)
-3. Copy the file `SConstruct-rive` into `thirdparty/rive-cpp`
+3. Copy the file `SConstruct_rive` into `thirdparty/rive-cpp`
 4. Inside `thirdparty/rive-cpp`, run `scons` (run `scons --help` to see full list of options)
 
 ### 2. Build thorvg

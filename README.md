@@ -38,7 +38,11 @@ It makes use of the following third-party libraries:
 - [x] Run and play Rive animations
 - [ ] Raster image support
 - [ ] Input events (hover, pressed, etc.)
+- [ ] Alignment & size exported properties
 - [ ] State machines
+- [ ] Dynamic exported properties based on state machine
 - [ ] Windows/Linux support
 - [ ] iOS/Android support
+- [ ] Optimization
 - [ ] Any missing features
+- [ ] `.riv` ResourceLoader

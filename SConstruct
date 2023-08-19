@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import sys
+from os import path
 
 
 def glob_recursive(root_path, pattern):
@@ -18,33 +19,52 @@ def glob_recursive(root_path, pattern):
 
 env = SConscript("godot-cpp/SConstruct")
 
+env["STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME"] = True
+
 sources = []
 
-# Add thorvg library
-thorvg_src_dir = "thirdparty/thorvg/"
-thorvg_binary_dir = "thirdparty/thorvg/build/src"
-thorvg_binary = thorvg_binary_dir + "/libthorvg.dylib"
-env.Alias("thorvg", thorvg_binary_dir)
+# Add skia library
+SKIA_SRC_DIR = "thirdparty/rive-cpp/skia/"
+SKIA_BIN_DIR = path.join(SKIA_SRC_DIR, "dependencies/skia/out/static")
+env.Alias("skia", SKIA_BIN_DIR)
 env.Prepend(
-    LIBS=["thorvg"],
-    LIBPATH=[thorvg_binary_dir],
+    LIBS=["skia"],
+    LIBPATH=[SKIA_BIN_DIR],
     CPPPATH=[
-        thorvg_src_dir + "inc",
-        thorvg_src_dir + "src",
+        SKIA_SRC_DIR,
+        path.join(SKIA_SRC_DIR, "dependencies/skia"),
+        path.join(SKIA_SRC_DIR, "dependencies/skia/include"),
+        path.join(SKIA_SRC_DIR, "dependencies/skia/src"),
+        path.join(SKIA_SRC_DIR, "renderer"),
+        path.join(SKIA_SRC_DIR, "renderer/include"),
+        path.join(SKIA_SRC_DIR, "renderer/src"),
     ]
 )
 
+# Add thorvg library
+# TVG_SRC_DIR = "thirdparty/thorvg/"
+# TVG_BIN_DIR = "thirdparty/thorvg/build/src"
+# env.Alias("thorvg", TVG_BIN_DIR)
+# env.Prepend(
+#     LIBS=["thorvg"],
+#     LIBPATH=[TVG_BIN_DIR],
+#     CPPPATH=[
+#         path.join(TVG_SRC_DIR, "inc"),
+#         path.join(TVG_SRC_DIR, "src"),
+#     ]
+# )
+
 # Add rive library
-rive_src_dir = "thirdparty/rive-cpp/"
-rive_binary_dir = "demo/bin/rive"
-rive_binary = rive_binary_dir + "/librive.dylib"
-env.Alias("rive", rive_binary_dir)
+RIVE_SRC_DIR = "thirdparty/rive-cpp/"
+RIVE_BIN_DIR = "demo/bin/rive"
+env.Alias("rive", RIVE_BIN_DIR)
 env.Prepend(
     LIBS=["rive"],
-    LIBPATH=[rive_binary_dir],
+    LIBPATH=[RIVE_BIN_DIR],
     CPPPATH=[
-        rive_src_dir + "include",
-        rive_src_dir + "src"
+        RIVE_SRC_DIR,
+        path.join(RIVE_SRC_DIR, "include"),
+        path.join(RIVE_SRC_DIR, "src")
     ]
 )
 
@@ -66,16 +86,5 @@ else:
             env["suffix"], env["SHLIBSUFFIX"]),
         source=sources,
     )
-
-# env.Depends(
-#     library,
-#     rive_binary,
-# )
-#     Command(
-#         "demo/bin/rive/librive.a",
-#         rive_build_dir + "/librive.dylib",
-#         Copy("$TARGET", "$SOURCE"),
-#     )
-# )
 
 Default(library)

@@ -1,8 +1,6 @@
 #ifndef RIVEEXTENSION_H
 #define RIVEEXTENSION_H
 
-#include <thorvg.h>
-
 // Stdlib
 #include <vector>
 
@@ -18,42 +16,37 @@
 #include <rive/animation/state_machine_instance.hpp>
 #include <rive/file.hpp>
 
+// Skia
+#include <skia/dependencies/skia/include/core/SkBitmap.h>
+#include <skia/dependencies/skia/include/core/SkCanvas.h>
+#include <skia/dependencies/skia/include/core/SkSurface.h>
+
+#include <skia/renderer/include/skia_factory.hpp>
+#include <skia/renderer/include/skia_renderer.hpp>
+
 // Extension
-#include "tvg_renderer/factory.h"
-#include "tvg_renderer/renderer.h"
 #include "utils/out_redirect.hpp"
 #include "utils/types.hpp"
 
 using namespace godot;
 
-struct Img {
-    std::vector<uint32_t> bytes;
-    Ref<Image> image;
-    Ref<ImageTexture> texture;
-
-    void reset();
-    PackedByteArray get_byte_array();
-};
-
-struct Rive {
-    Ptr<rive::File> file;
-    Ptr<rive::Factory> factory;
-    Ptr<tvg::SwCanvas> canvas;
-    TvgRenderer renderer = TvgRenderer(nullptr);
-    Ptr<rive::LinearAnimationInstance> animation;
-    Ptr<rive::StateMachineInstance> state_machine;
-
-    void reset();
-};
-
 class RiveViewer : public Control {
     GDCLASS(RiveViewer, Control);
 
+   public:
+    Ptr<rive::File> file = nullptr;
+    Ptr<rive::SkiaFactory> factory = nullptr;
+    sk_sp<SkSurface> surface = nullptr;
+    Ptr<rive::SkiaRenderer> renderer = nullptr;
+    Ptr<rive::LinearAnimationInstance> animation = nullptr;
+    Ptr<rive::StateMachineInstance> state_machine = nullptr;
+    Ref<Image> image = nullptr;
+    Ref<ImageTexture> texture = nullptr;
+
    private:
     String path;
-    Img img;
-    Rive riv;
     float elapsed;
+    float _last_delta;
     CerrRedirect _err_output;
 
    protected:
@@ -65,6 +58,7 @@ class RiveViewer : public Control {
 
     void _draw() override;
     void _process(float delta);
+    void _notification(int what);
 
     void test();
     String get_file_path();
@@ -72,13 +66,8 @@ class RiveViewer : public Control {
     int width();
     int height();
 
-    void _update_image_size();
-    void _reset_target();
-    void _update_target();
     void _load();
     void _render(float delta);
-
-    rive::Factory* factory();
 };
 
 #endif

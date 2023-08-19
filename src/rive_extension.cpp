@@ -14,7 +14,6 @@
 // Extension
 #include "utils/read_rive_file.hpp"
 #include "utils/rive.hpp"
-#include "utils/tvg.hpp"
 #include "utils/types.hpp"
 
 const Image::Format IMAGE_FORMAT = Image::Format::FORMAT_RGBA8;
@@ -23,90 +22,47 @@ bool is_editor_hint() {
     return Engine::get_singleton()->is_editor_hint();
 }
 
-PackedByteArray Img::get_byte_array() {
+SkImageInfo get_image_info(RiveViewer *viewer) {
+    return SkImageInfo::Make(
+        viewer->width(),
+        viewer->height(),
+        SkColorType::kRGBA_8888_SkColorType,
+        SkAlphaType::kUnpremul_SkAlphaType
+    );
+}
+
+PackedByteArray get_byte_array(RiveViewer *viewer) {
+    sk_sp<SkData> data = viewer->surface->makeImageSnapshot()->encodeToData();
+    const uint8_t *bytes = data->bytes();
     PackedByteArray arr = PackedByteArray();
-    arr.resize(bytes.size() * 4);
-    for (int i = 0; i < bytes.size(); i++) {
-        arr.encode_u32(i * 4, bytes[i]);
+    arr.resize(data->size());
+    for (int i = 0; i < data->size(); i++) {
+        arr[i] = bytes[i];
     }
     return arr;
 }
 
-/**
- * Clears current draw state.
- */
-void Rive::reset() {
-    canvas = tvg::SwCanvas::gen();
-    renderer = TvgRenderer(canvas.get());
-    factory = rivestd::make_unique<TvgFactory>();
-}
-
-/**
- * Clears current image/buffer state.
- */
-void Img::reset() {
-    bytes.clear();
-    image = Image::create(1, 1, false, IMAGE_FORMAT);
-}
-
-RiveViewer::RiveViewer() {
-    if (!is_editor_hint()) {
-        riv.reset();
-        img.reset();
-        tvg::Result result = tvg::Initializer::init(tvg::CanvasEngine::Sw, 0);
-        if (result != tvg::Result::Success) {
-            GDERR("Error initializing ThorVG: ", as_string(result).c_str());
-            return;
-        }
-    }
-}
-
-RiveViewer::~RiveViewer() {
-    tvg::Initializer::term(tvg::CanvasEngine::Sw);
-    auto output = _err_output.str();
-    if (output.length() > 0) GDERR("Errors: ", output.c_str());
-}
-
-void RiveViewer::_update_image_size() {
-    if (img.bytes.size() < width() * height()) {
-        img.bytes.resize(width() * height());
-    }
-}
-
-void RiveViewer::_update_target() {
-    if (!is_editor_hint()) {
-        _update_image_size();
-        GDPRINTS(
-            "Width:",
-            riv.file->artboard()->bounds().width(),
-            "Height:",
-            riv.file->artboard()->bounds().height()
-        );
-        riv.renderer.align(
+void handle_resize(RiveViewer *viewer) {
+    int width = viewer->width(), height = viewer->height();
+    viewer->surface = SkSurface::MakeRaster(get_image_info(viewer));
+    viewer->renderer
+        = rivestd::make_unique<SkiaRenderer>(viewer->surface->getCanvas());
+    viewer->image = Image::create(width, height, false, IMAGE_FORMAT);
+    viewer->texture = ImageTexture::create_from_image(viewer->image);
+    if (viewer->file)
+        viewer->renderer->align(
             rive::Fit::contain,
             rive::Alignment::topLeft,
-            rive::AABB(0, 0, width(), height()),
-            riv.file->artboard()->bounds()
+            rive::AABB(0, 0, width, height),
+            viewer->file->artboard()->bounds()
         );
-        tvg::Result result = riv.canvas->target(
-            img.bytes.data(),
-            width(),
-            width(),
-            height(),
-            tvg::SwCanvas::ABGR8888
-        );
-        if (result != tvg::Result::Success) {
-            GDERR("Error updating canvas target: ", as_string(result).c_str());
-            return;
-        }
-        img.image->set_data(
-            width(),
-            height(),
-            false,
-            IMAGE_FORMAT,
-            img.get_byte_array()
-        );
-    }
+}
+
+RiveViewer::RiveViewer() {}
+
+RiveViewer::~RiveViewer() {
+    auto output = _err_output.str();
+    if (output.length() > 0) GDERR("Errors: ", output.c_str());
 }
 
 void RiveViewer::_bind_methods() {
@@ -125,78 +81,66 @@ void RiveViewer::_bind_methods() {
 }
 
 void RiveViewer::_draw() {
-    if (img.texture != nullptr) {
-        draw_texture(img.texture, Vector2(0, 0));
+    if (!is_editor_hint() && is_node_ready()) {
+        Ptr<ArtboardInstance> artboard = file->artboardDefault();
+        if (!artboard) {
+            GDERR("Artboard is null.");
+            return;
+        }
+        // if (state_machine) {
+        //     GDPRINT("State machine found!");
+        //     state_machine->advanceAndApply(delta);
+        // } else
+        if (animation) {
+            animation->advance(_last_delta);
+            animation->animation()->apply(artboard.get(), elapsed);
+            if (animation->didLoop()) {
+                elapsed = 0;
+            }
+            artboard->advance(_last_delta);
+        } else {
+            bool did_update = artboard->advance(_last_delta);
+            if (!did_update) {
+                GDERR("Did not update artboard.");
+                return;
+            }
+        }
+        if (renderer) artboard->draw(renderer.get());
+        if (image->get_size() != texture->get_size()) {
+            GDPRINT("Image and texture size do not match.");
+            return;
+        }
+        image->load_png_from_buffer(get_byte_array(this));
+        texture->update(image);
+        draw_texture(texture, Vector2(0, 0));
+        surface->getCanvas()->clear(SkColors::kTransparent);
     }
 }
 
 void RiveViewer::_process(float delta) {
-    if (path.length() > 0 && is_node_ready() && !is_editor_hint()) {
-        _render(delta);
+    if (path.length() > 0 && file && is_node_ready() && !is_editor_hint()) {
+        _last_delta = delta;
+        elapsed += delta;
+        queue_redraw();
     }
 }
 
-void RiveViewer::_render(float delta) {
-    Ptr<ArtboardInstance> artboard = riv.file->artboardDefault();
-    if (!artboard) {
-        GDERR("Artboard is null.");
-        return;
-    }
-    elapsed += delta;
-
-    // if (riv.state_machine) {
-    //     GDPRINT("State machine found!");
-    //     riv.state_machine->advanceAndApply(delta);
-    // } else
-    if (riv.animation) {
-        riv.animation->advance(delta);
-        riv.animation->animation()->apply(artboard.get(), elapsed);
-        if (riv.animation->didLoop()) {
-            elapsed = 0;
+void RiveViewer::_notification(int what) {
+    if (is_node_ready()) switch (what) {
+            case NOTIFICATION_RESIZED:
+                handle_resize(this);
         }
-        artboard->advance(delta);
-    } else {
-        bool did_update = artboard->advance(delta);
-        if (!did_update) {
-            GDERR("Did not update artboard.");
-            return;
-        }
-    }
-
-    artboard->draw(&riv.renderer);
-
-    // Sync canvas
-    tvg::Result result = riv.canvas->draw();
-    if (result != tvg::Result::Success) {
-        GDERR("Error drawing: ", as_string(result).c_str());
-        return;
-    }
-    riv.canvas->sync();
-
-    // Update texture
-    img.image->set_data(
-        width(),
-        height(),
-        false,
-        IMAGE_FORMAT,
-        img.get_byte_array()
-    );
-    img.texture = ImageTexture::create_from_image(img.image);
-    queue_redraw();
-
-    riv.canvas->clear();
 }
 
 void RiveViewer::test() {
-    _update_target();
-
-    if (riv.file->artboardCount() > 0) {
-        Ptr<ArtboardInstance> artboard = riv.file->artboardDefault();
+    if (file->artboardCount() > 0) {
+        handle_resize(this);
+        Ptr<ArtboardInstance> artboard = file->artboardDefault();
         if (artboard) {
             if (artboard->animationCount() > 0)
-                riv.animation = artboard->animationAt(0);
+                animation = artboard->animationAt(0);
             if (artboard->stateMachineCount() > 0)
-                riv.state_machine = artboard->defaultStateMachine();
+                state_machine = artboard->defaultStateMachine();
         }
     }
 }
@@ -211,27 +155,30 @@ void RiveViewer::set_file_path(String value) {
 }
 
 int RiveViewer::width() {
-    return get_size().x;
+    return std::max(get_size().x, (real_t)1);
 }
 
 int RiveViewer::height() {
-    return get_size().y;
-}
-
-rive::Factory *RiveViewer::factory() {
-    return riv.factory.get();
-}
-
-void RiveViewer::_reset_target() {
-    riv.reset();
-    img.reset();
+    return std::max(get_size().y, (real_t)1);
 }
 
 void RiveViewer::_load() {
-    _reset_target();
     if (!is_editor_hint()) {
-        riv.file = read_rive_file(path, factory());
-        if (riv.file == nullptr) GDERR("Failed to import <", path, ">.");
-        else GDPRINT("Successfully imported <", path, ">!");
+        factory = rivestd::make_unique<SkiaFactory>();
+        file = read_rive_file(path, factory.get());
+        if (file == nullptr) GDERR("Failed to import <", path, ">.");
+        else {
+            handle_resize(this);
+            GDPRINT("Successfully imported <", path, ">!");
+            auto artboard = file->artboardDefault();
+            if (artboard) {
+                GDPRINTS(
+                    "Width:",
+                    artboard->width(),
+                    "Height:",
+                    artboard->height()
+                );
+            }
+        }
     }
 }

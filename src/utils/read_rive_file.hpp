@@ -14,9 +14,7 @@
 #include <rive/file.hpp>
 #include <rive/file_asset_resolver.hpp>
 #include <rive/span.hpp>
-#include <utils/no_op_factory.hpp>
 
-#include "tvg_renderer/factory.h"
 #include "utils/godot_macros.hpp"
 #include "utils/out_redirect.hpp"
 #include "utils/types.hpp"

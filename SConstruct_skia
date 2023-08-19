@@ -1,0 +1,232 @@
+#!/usr/bin/env python
+
+import os
+import platform
+import sys
+import subprocess
+from SCons.Errors import UserError
+
+#########################
+# Copied from godot-cpp #
+#########################
+
+EnsureSConsVersion(4, 0)
+
+toolpath = "../../../godot-cpp/tools"
+
+# Try to detect the host platform automatically.
+# This is used if no `platform` argument is passed
+if sys.platform.startswith("linux"):
+    default_platform = "linux"
+elif sys.platform == "darwin":
+    default_platform = "macos"
+elif sys.platform == "win32" or sys.platform == "msys":
+    default_platform = "windows"
+elif ARGUMENTS.get("platform", ""):
+    default_platform = ARGUMENTS.get("platform")
+else:
+    raise ValueError(
+        "Could not detect platform automatically, please specify with platform=<platform>")
+
+try:
+    Import("env")
+except:
+    # Default tools with no platform defaults to gnu toolchain.
+    # We apply platform specific toolchains via our custom tools.
+    env = Environment(tools=["default"], PLATFORM="")
+
+env.PrependENVPath("PATH", os.getenv("PATH"))
+# Custom options and profile flags.
+customs = ["custom.py"]
+profile = ARGUMENTS.get("profile", "")
+if profile:
+    if os.path.isfile(profile):
+        customs.append(profile)
+    elif os.path.isfile(profile + ".py"):
+        customs.append(profile + ".py")
+opts = Variables(customs, ARGUMENTS)
+
+platforms = ("linux", "macos", "windows", "android", "ios", "javascript")
+opts.Add(
+    EnumVariable(
+        key="platform",
+        help="Target platform",
+        default=env.get("platform", default_platform),
+        allowed_values=platforms,
+        ignorecase=2,
+    )
+)
+opts.Add(
+    EnumVariable(
+        key="target",
+        help="Compilation target",
+        default=env.get("target", "template_debug"),
+        allowed_values=("editor", "template_release", "template_debug"),
+    )
+)
+
+# Add platform options
+tools = {}
+for pl in platforms:
+    tool = Tool(pl, toolpath=[toolpath])
+    if hasattr(tool, "options"):
+        tool.options(opts)
+    tools[pl] = tool
+
+# CPU architecture options.
+architecture_array = ["", "universal", "x86_32", "x86_64",
+                      "arm32", "arm64", "rv64", "ppc32", "ppc64", "wasm32"]
+architecture_aliases = {
+    "x64": "x86_64",
+    "amd64": "x86_64",
+    "armv7": "arm32",
+    "armv8": "arm64",
+    "arm64v8": "arm64",
+    "aarch64": "arm64",
+    "rv": "rv64",
+    "riscv": "rv64",
+    "riscv64": "rv64",
+    "ppcle": "ppc32",
+    "ppc": "ppc32",
+    "ppc64le": "ppc64",
+}
+opts.Add(
+    EnumVariable(
+        key="arch",
+        help="CPU architecture",
+        default=env.get("arch", ""),
+        allowed_values=architecture_array,
+        map=architecture_aliases,
+    )
+)
+
+# Targets flags tool (optimizations, debug symbols)
+target_tool = Tool("targets", toolpath=[toolpath])
+target_tool.options(opts)
+
+opts.Update(env)
+Help(opts.GenerateHelpText(env))
+
+# Process CPU architecture argument.
+if env["arch"] == "":
+    # No architecture specified. Default to arm64 if building for Android,
+    # universal if building for macOS or iOS, wasm32 if building for web,
+    # otherwise default to the host architecture.
+    if env["platform"] in ["macos", "ios"]:
+        env["arch"] = "universal"
+    elif env["platform"] == "android":
+        env["arch"] = "arm64"
+    elif env["platform"] == "javascript":
+        env["arch"] = "wasm32"
+    else:
+        host_machine = platform.machine().lower()
+        if host_machine in architecture_array:
+            env["arch"] = host_machine
+        elif host_machine in architecture_aliases.keys():
+            env["arch"] = architecture_aliases[host_machine]
+        elif "86" in host_machine:
+            # Catches x86, i386, i486, i586, i686, etc.
+            env["arch"] = "x86_32"
+        else:
+            print("Unsupported CPU architecture: " + host_machine)
+            Exit()
+
+tool = Tool(env["platform"], toolpath=[toolpath])
+
+if tool is None or not tool.exists(env):
+    raise ValueError(
+        "Required toolchain not found for platform " + env["platform"])
+
+tool.generate(env)
+target_tool.generate(env)
+
+# Detect and print a warning listing unknown SCons variables to ease troubleshooting.
+unknown = opts.UnknownVariables()
+if unknown:
+    print("WARNING: Unknown SCons variables were passed and will be ignored:")
+    for item in unknown.items():
+        print("    " + item[0] + "=" + item[1])
+
+print("Building for architecture " +
+      env["arch"] + " on platform " + env["platform"])
+
+# Require C++17
+if env.get("is_msvc", False):
+    env.Append(CXXFLAGS=["/std:c++17"])
+else:
+    env.Append(CXXFLAGS=["-std=c++17"])
+
+scons_cache_path = os.environ.get("SCONS_CACHE")
+if scons_cache_path is not None:
+    CacheDir(scons_cache_path)
+    Decider("MD5")
+
+
+############
+# rive-cpp #
+############
+
+
+def glob_recursive(root_path, pattern):
+    result_nodes = []
+    paths = [root_path]
+    while paths:
+        path = paths.pop()
+        all_nodes = Glob(f'{path}/*')
+        # `srcnode()` must be used because `isdir()` doesn't work for entries in variant dirs which haven't been copied yet.
+        paths.extend(entry for entry in all_nodes if entry.isdir()
+                     or (entry.srcnode() and entry.srcnode().isdir()))
+        result_nodes.extend(Glob(f'{path}/{pattern}'))
+    return sorted(result_nodes)
+
+
+env["STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME"] = True
+
+DEP_DIR = "dependencies/"
+SKIA_DIR = DEP_DIR + "skia/out/static/"
+
+env.Prepend(
+    LIBS=[
+        "jpeg",
+        "particles",
+        "compression_utils_portable",
+        "pathkit",
+        "png",
+        "skia",
+        "skresources",
+        "skshaper",
+        "webp_sse41",
+        "webp",
+        "zlib"
+    ],
+    LIBPATH=[SKIA_DIR]
+)
+
+
+env.Prepend(CPPPATH=[
+    # dependencies
+    "font_converter/include",
+    # skia
+    DEP_DIR + "skia",
+    DEP_DIR + "skia/src",
+    DEP_DIR + "skia/include"
+    # renderer
+    "renderer/src",
+    "renderer/include",
+    # rive-cpp
+    "../include",
+])
+
+sources = (
+    glob_recursive("renderer/src", "*.cpp")
+    + glob_recursive("renderer/src", "*.c")
+    + glob_recursive("font_converter/src", "*.cpp")
+    + glob_recursive("font_converter/src", "*.c")
+)
+
+lib = env.SharedLibrary(
+    target="../../../demo/bin/skia/skia",
+    source=sources,
+)
+
+Default(lib)

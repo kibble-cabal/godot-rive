@@ -8,7 +8,7 @@ This extensions adds [Rive](https://rive.app) support to Godot 4.
 
 It makes use of the following third-party libraries:
 - [`rive-cpp`](https://github.com/rive-app/rive-cpp)
-- [`thorvg`](https://github.com/thorvg/thorvg)
+- [`skia`](https://github.com/google/skia) (included in `rive-cpp`)
 
 ## Building & installation
 
@@ -20,18 +20,18 @@ It makes use of the following third-party libraries:
 3. Copy the file `SConstruct_rive` into `thirdparty/rive-cpp`
 4. Inside `thirdparty/rive-cpp`, run `scons` (run `scons --help` to see full list of options)
 
-### 2. Build thorvg
-1. Install meson and ninja, if not already installed
-2. Update the submodule (`git submodule update thirdparty/thorvg`)
-3. Follow [ThorVG's build instructions](https://github.com/thorvg/thorvg#installation)
+### 2. Build skia
+1. Inside `thirdparty/rive-cpp/skia/dependencies`, run `sh make_dependencies.sh`
+2. Copy the file `SConstruct_skia` into `thirdparty/rive-cpp/skia`
+3. Inside `thirdparty/rive-cpp/skia`, run `scons` (or `scons --help` to see full list of options)
 
 ### 3. Build godot-rive
 1. Update the submodule (`git submodule update godot-cpp`)
 
 ### 4. Build the extension
 1. Install scons, if not already installed
-2. Inside the root directory, run `scons` (run `scons --help` to see full list of options)
-3. You may be required to add the generated lib binary files from `rive-cpp` or `thorvg` to Godot's contents directory -- on MacOS, you would copy `demo/bin/rive/librive.dylib` and `demo/bin/thorvg/libthorvg.dylib` into the directory `Godot.app/Contents/MacOS`
+2. Inside the root directory, run `scons` (or `scons --help` to see full list of options)
+3. You may be required to add the generated lib binary files from `rive-cpp` to Godot's contents directory. Open up the demo project and look at the output to see you get an error - if so, on MacOS, you would copy `demo/bin/rive/librive.dylib` into the directory `Godot.app/Contents/MacOS`.
 
 ## Roadmap
 - [x] Load `.riv` files

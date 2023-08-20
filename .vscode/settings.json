@@ -86,6 +86,8 @@
         "filesystem": "cpp",
         "iterator": "cpp",
         "__memory": "cpp",
-        "functional": "cpp"
+        "functional": "cpp",
+        "valarray": "cpp",
+        "*.inc": "cpp"
     }
 }

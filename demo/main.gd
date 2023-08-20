@@ -9,4 +9,3 @@ func _ready() -> void:
 	date.minute = str(date.minute).pad_zeros(2)
 	print("{month}/{day}/{year}, {hour}:{minute}{period}".format(date))
 	
-	$RiveViewer.test()

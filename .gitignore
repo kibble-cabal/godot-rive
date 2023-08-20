@@ -5,3 +5,4 @@
 # Builds
 *.os
 *.o
+.sconsign.dblite

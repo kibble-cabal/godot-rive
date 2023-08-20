@@ -12,7 +12,7 @@
 #include <rive/animation/linear_animation_instance.hpp>
 
 // Extension
-#include "utils/read_rive_file.hpp"
+#include "utils/godot_macros.hpp"
 #include "utils/rive.hpp"
 #include "utils/types.hpp"
 
@@ -20,42 +20,6 @@ const Image::Format IMAGE_FORMAT = Image::Format::FORMAT_RGBA8;
 
 bool is_editor_hint() {
     return Engine::get_singleton()->is_editor_hint();
-}
-
-SkImageInfo get_image_info(RiveViewer *viewer) {
-    return SkImageInfo::Make(
-        viewer->width(),
-        viewer->height(),
-        SkColorType::kRGBA_8888_SkColorType,
-        SkAlphaType::kUnpremul_SkAlphaType
-    );
-}
-
-PackedByteArray get_byte_array(RiveViewer *viewer) {
-    sk_sp<SkData> data = viewer->surface->makeImageSnapshot()->encodeToData();
-    const uint8_t *bytes = data->bytes();
-    PackedByteArray arr = PackedByteArray();
-    arr.resize(data->size());
-    for (int i = 0; i < data->size(); i++) {
-        arr[i] = bytes[i];
-    }
-    return arr;
-}
-
-void handle_resize(RiveViewer *viewer) {
-    int width = viewer->width(), height = viewer->height();
-    viewer->surface = SkSurface::MakeRaster(get_image_info(viewer));
-    viewer->renderer
-        = rivestd::make_unique<SkiaRenderer>(viewer->surface->getCanvas());
-    viewer->image = Image::create(width, height, false, IMAGE_FORMAT);
-    viewer->texture = ImageTexture::create_from_image(viewer->image);
-    if (viewer->file)
-        viewer->renderer->align(
-            rive::Fit::contain,
-            rive::Alignment::topLeft,
-            rive::AABB(0, 0, width, height),
-            viewer->file->artboard()->bounds()
-        );
 }
 
 RiveViewer::RiveViewer() {}
@@ -66,82 +30,67 @@ RiveViewer::~RiveViewer() {
 }
 
 void RiveViewer::_bind_methods() {
-    ClassDB::bind_method(D_METHOD("test"), &RiveViewer::test);
     ClassDB::bind_method(D_METHOD("get_file_path"), &RiveViewer::get_file_path);
-    ClassDB::bind_method(
-        D_METHOD("set_file_path", "value"),
-        &RiveViewer::set_file_path
-    );
+    ClassDB::bind_method(D_METHOD("set_file_path", "value"), &RiveViewer::set_file_path);
     ClassDB::add_property(
         get_class_static(),
-        PropertyInfo(Variant::STRING, "path", PROPERTY_HINT_FILE),
+        PropertyInfo(Variant::STRING, "path", PROPERTY_HINT_FILE, "*.riv"),
         "set_file_path",
         "get_file_path"
     );
 }
 
+void RiveViewer::_gui_input(const Ref<InputEvent> &event) {
+    auto mouse_event = dynamic_cast<InputEventMouse *>(event.ptr());
+    if (!mouse_event || !controller) return;
+
+    rive::Vec2D pos = rive::Vec2D(mouse_event->get_position().x, mouse_event->get_position().y);
+
+    if (auto mouse_button = dynamic_cast<InputEventMouseButton *>(event.ptr())) {
+        GDPRINT("button!", mouse_button->is_pressed());
+        if (mouse_button->is_pressed()) controller->pointer_down(pos);
+        else if (mouse_button->is_released()) controller->pointer_up(pos);
+    }
+    if (auto mouse_motion = dynamic_cast<InputEventMouseMotion *>(event.ptr())) {
+        controller->pointer_move(pos);
+    }
+}
+
 void RiveViewer::_draw() {
-    if (!is_editor_hint() && is_node_ready()) {
-        Ptr<ArtboardInstance> artboard = file->artboardDefault();
-        if (!artboard) {
-            GDERR("Artboard is null.");
-            return;
-        }
-        // if (state_machine) {
-        //     GDPRINT("State machine found!");
-        //     state_machine->advanceAndApply(delta);
-        // } else
-        if (animation) {
-            animation->advance(_last_delta);
-            animation->animation()->apply(artboard.get(), elapsed);
-            if (animation->didLoop()) {
-                elapsed = 0;
-            }
-            artboard->advance(_last_delta);
-        } else {
-            bool did_update = artboard->advance(_last_delta);
-            if (!did_update) {
-                GDERR("Did not update artboard.");
-                return;
-            }
-        }
-        if (renderer) artboard->draw(renderer.get());
-        if (image->get_size() != texture->get_size()) {
-            GDPRINT("Image and texture size do not match.");
-            return;
-        }
-        image->load_png_from_buffer(get_byte_array(this));
-        texture->update(image);
+    if (!is_editor_hint() && texture != nullptr && !texture.is_null() && texture.is_valid()) {
         draw_texture(texture, Vector2(0, 0));
-        surface->getCanvas()->clear(SkColors::kTransparent);
     }
 }
 
 void RiveViewer::_process(float delta) {
-    if (path.length() > 0 && file && is_node_ready() && !is_editor_hint()) {
-        _last_delta = delta;
-        elapsed += delta;
-        queue_redraw();
+    if (!is_editor_hint() && controller) {
+        if (image == nullptr || !image.is_valid() || image.is_null())
+            image = Image::create(width(), height(), false, IMAGE_FORMAT);
+        if (texture == nullptr || !texture.is_valid() || texture.is_null())
+            texture = ImageTexture::create_from_image(image);
+
+        auto bytes = controller->frame(delta);
+        if (bytes.size()) {
+            image->load_png_from_buffer(bytes);
+            texture->update(image);
+            queue_redraw();
+        }
     }
 }
 
 void RiveViewer::_notification(int what) {
-    if (is_node_ready()) switch (what) {
+    if (is_node_ready() && controller) switch (what) {
             case NOTIFICATION_RESIZED:
-                handle_resize(this);
+                _on_resize();
         }
 }
 
-void RiveViewer::test() {
-    if (file->artboardCount() > 0) {
-        handle_resize(this);
-        Ptr<ArtboardInstance> artboard = file->artboardDefault();
-        if (artboard) {
-            if (artboard->animationCount() > 0)
-                animation = artboard->animationAt(0);
-            if (artboard->stateMachineCount() > 0)
-                state_machine = artboard->defaultStateMachine();
-        }
+void RiveViewer::_ready() {
+    if (!is_editor_hint() && path.length() > 0) {
+        controller = rivestd::make_unique<RiveController>(path);
+        controller->load();
+        controller->start();
+        _on_resize();
     }
 }
 
@@ -151,7 +100,6 @@ String RiveViewer::get_file_path() {
 
 void RiveViewer::set_file_path(String value) {
     path = value;
-    _load();
 }
 
 int RiveViewer::width() {
@@ -162,23 +110,8 @@ int RiveViewer::height() {
     return std::max(get_size().y, (real_t)1);
 }
 
-void RiveViewer::_load() {
-    if (!is_editor_hint()) {
-        factory = rivestd::make_unique<SkiaFactory>();
-        file = read_rive_file(path, factory.get());
-        if (file == nullptr) GDERR("Failed to import <", path, ">.");
-        else {
-            handle_resize(this);
-            GDPRINT("Successfully imported <", path, ">!");
-            auto artboard = file->artboardDefault();
-            if (artboard) {
-                GDPRINTS(
-                    "Width:",
-                    artboard->width(),
-                    "Height:",
-                    artboard->height()
-                );
-            }
-        }
-    }
+void RiveViewer::_on_resize() {
+    if (controller) controller->resize(width(), height());
+    image = Image::create(width(), height(), false, IMAGE_FORMAT);
+    texture = ImageTexture::create_from_image(image);
 }

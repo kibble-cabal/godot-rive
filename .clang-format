@@ -2,7 +2,7 @@ BasedOnStyle: Google
 IndentWidth: 4
 TabWidth: 4
 UseTab: Never
-ColumnLimit: 80
+ColumnLimit: 120
 AlignAfterOpenBracket: BlockIndent
 AllowAllArgumentsOnNextLine: false
 AllowShortIfStatementsOnASingleLine: AllIfsAndElse

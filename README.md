@@ -36,8 +36,8 @@ It makes use of the following third-party libraries:
 ## Roadmap
 - [x] Load `.riv` files
 - [x] Run and play Rive animations
-- [ ] Raster image support
-- [ ] Input events (hover, pressed, etc.)
+- [x] Raster image support
+- [x] Input events (hover, pressed, etc.)
 - [ ] Alignment & size exported properties
 - [ ] State machines
 - [ ] Dynamic exported properties based on state machine

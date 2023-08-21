@@ -21,7 +21,9 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="RiveViewer" type="RiveViewer" parent="."]
-path = "res://examples/joystick.riv"
+path = "res://examples/on_off.riv"
+fit = 3
+alignment = 5
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

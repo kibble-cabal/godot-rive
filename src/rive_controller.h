@@ -27,8 +27,12 @@ class RiveController {
    public:
     godot::String path;
     rive::Vec2D size = rive::Vec2D{ 1, 1 };
-    float elapsed = 0;
 
+    rive::Fit fit = rive::Fit::contain;
+    rive::Alignment alignment = rive::Alignment::topLeft;
+
+   private:
+    float elapsed = 0;
     Ptr<rive::File> file = nullptr;
     sk_sp<SkSurface> surface = nullptr;
     Ptr<rive::SkiaRenderer> renderer = nullptr;
@@ -46,11 +50,12 @@ class RiveController {
     void pointer_down(rive::Vec2D position);
     void pointer_up(rive::Vec2D position);
     void pointer_move(rive::Vec2D position);
+    void realign();
+    void realign(rive::Fit fit, rive::Alignment align);
 
     godot::PackedByteArray frame(float delta);
 
    private:
-    void update_align();
     godot::PackedByteArray byte_array();
     SkImageInfo make_image_info();
 };

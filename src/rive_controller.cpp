@@ -35,20 +35,22 @@ void RiveController::resize(unsigned int width, unsigned int height) {
     size = rive::Vec2D{ (float)width, (float)height };
     surface = SkSurface::MakeRaster(make_image_info());
     renderer = rivestd::make_unique<SkiaRenderer>(surface->getCanvas());
-    update_align();
+    realign();
 }
 
-void RiveController::update_align() {
+void RiveController::realign() {
     if (file) {
-        auto transform = rive::computeAlignment(
-            rive::Fit::contain,
-            rive::Alignment::topLeft,
-            rive::AABB(0, 0, size.x, size.y),
-            file->artboard()->bounds()
-        );
+        auto transform
+            = rive::computeAlignment(fit, alignment, rive::AABB(0, 0, size.x, size.y), file->artboard()->bounds());
         renderer->transform(transform);
         inverse_transform = transform.invertOrIdentity();
     }
+}
+
+void RiveController::realign(rive::Fit fit_value, rive::Alignment align_value) {
+    fit = fit_value;
+    alignment = align_value;
+    realign();
 }
 
 godot::PackedByteArray RiveController::frame(float delta) {

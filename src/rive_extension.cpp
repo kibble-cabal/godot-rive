@@ -38,6 +38,24 @@ void RiveViewer::_bind_methods() {
         "set_file_path",
         "get_file_path"
     );
+
+    ClassDB::bind_method(D_METHOD("get_fit"), &RiveViewer::get_fit);
+    ClassDB::bind_method(D_METHOD("set_fit", "value"), &RiveViewer::set_fit);
+    ClassDB::add_property(
+        get_class_static(),
+        PropertyInfo(Variant::INT, "fit", PROPERTY_HINT_ENUM, FitEnumPropertyHint),
+        "set_fit",
+        "get_fit"
+    );
+
+    ClassDB::bind_method(D_METHOD("get_alignment"), &RiveViewer::get_alignment);
+    ClassDB::bind_method(D_METHOD("set_alignment", "value"), &RiveViewer::set_alignment);
+    ClassDB::add_property(
+        get_class_static(),
+        PropertyInfo(Variant::INT, "alignment", PROPERTY_HINT_ENUM, AlignEnumPropertyHint),
+        "set_alignment",
+        "get_alignment"
+    );
 }
 
 void RiveViewer::_gui_input(const Ref<InputEvent> &event) {
@@ -47,7 +65,6 @@ void RiveViewer::_gui_input(const Ref<InputEvent> &event) {
     rive::Vec2D pos = rive::Vec2D(mouse_event->get_position().x, mouse_event->get_position().y);
 
     if (auto mouse_button = dynamic_cast<InputEventMouseButton *>(event.ptr())) {
-        GDPRINT("button!", mouse_button->is_pressed());
         if (mouse_button->is_pressed()) controller->pointer_down(pos);
         else if (mouse_button->is_released()) controller->pointer_up(pos);
     }
@@ -88,10 +105,63 @@ void RiveViewer::_notification(int what) {
 void RiveViewer::_ready() {
     if (!is_editor_hint() && path.length() > 0) {
         controller = rivestd::make_unique<RiveController>(path);
+        controller->realign(get_rive_fit(), get_rive_alignment());
         controller->load();
         controller->start();
         _on_resize();
     }
+}
+
+rive::Fit RiveViewer::get_rive_fit() {
+    switch (fit) {
+        case Fit::COVER:
+            return rive::Fit::cover;
+        case Fit::FILL:
+            return rive::Fit::fill;
+        case Fit::FIT_HEIGHT:
+            return rive::Fit::fitHeight;
+        case Fit::FIT_WIDTH:
+            return rive::Fit::fitWidth;
+        case Fit::NONE:
+            return rive::Fit::none;
+        case Fit::SCALE_DOWN:
+            return rive::Fit::scaleDown;
+        case Fit::CONTAIN:
+        default:
+            return rive::Fit::contain;
+    }
+}
+
+rive::Alignment RiveViewer::get_rive_alignment() {
+    switch (alignment) {
+        case Align::BOTTOM_CENTER:
+            return rive::Alignment::bottomCenter;
+        case Align::BOTTOM_LEFT:
+            return rive::Alignment::bottomLeft;
+        case Align::BOTTOM_RIGHT:
+            return rive::Alignment::bottomRight;
+        case Align::CENTER:
+            return rive::Alignment::center;
+        case Align::CENTER_LEFT:
+            return rive::Alignment::centerLeft;
+        case Align::CENTER_RIGHT:
+            return rive::Alignment::centerRight;
+        case Align::TOP_CENTER:
+            return rive::Alignment::topCenter;
+        case Align::TOP_RIGHT:
+            return rive::Alignment::topRight;
+        case Align::TOP_LEFT:
+        default:
+            return rive::Alignment::topLeft;
+    }
+}
+
+int RiveViewer::width() {
+    return std::max(get_size().x, (real_t)1);
+}
+
+int RiveViewer::height() {
+    return std::max(get_size().y, (real_t)1);
 }
 
 String RiveViewer::get_file_path() {
@@ -102,12 +172,14 @@ void RiveViewer::set_file_path(String value) {
     path = value;
 }
 
-int RiveViewer::width() {
-    return std::max(get_size().x, (real_t)1);
+void RiveViewer::set_fit(int value) {
+    fit = static_cast<RiveViewer::Fit>(value);
+    if (controller) controller->realign(get_rive_fit(), get_rive_alignment());
 }
 
-int RiveViewer::height() {
-    return std::max(get_size().y, (real_t)1);
+void RiveViewer::set_alignment(int value) {
+    alignment = static_cast<RiveViewer::Align>(value);
+    if (controller) controller->realign(get_rive_fit(), get_rive_alignment());
 }
 
 void RiveViewer::_on_resize() {

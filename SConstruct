@@ -19,53 +19,51 @@ def glob_recursive(root_path, pattern):
 
 env = SConscript("godot-cpp/SConstruct")
 
-env["STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME"] = True
+env["STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME"] = 1
 
 sources = []
 
-# Add skia library
-SKIA_SRC_DIR = "thirdparty/rive-cpp/skia/"
-SKIA_BIN_DIR = path.join(SKIA_SRC_DIR, "dependencies/skia/out/static")
-env.Alias("skia", SKIA_BIN_DIR)
+# Add rive library
 env.Prepend(
-    LIBS=["skia"],
-    LIBPATH=[SKIA_BIN_DIR],
+    LIBPATH=[
+        "thirdparty/rive-cpp/build/macosx/bin/debug",
+        "thirdparty/rive-cpp/dependencies/macosx/cache/bin/debug",
+    ],
     CPPPATH=[
-        SKIA_SRC_DIR,
-        path.join(SKIA_SRC_DIR, "dependencies/skia"),
-        path.join(SKIA_SRC_DIR, "dependencies/skia/include"),
-        path.join(SKIA_SRC_DIR, "dependencies/skia/src"),
-        path.join(SKIA_SRC_DIR, "renderer"),
-        path.join(SKIA_SRC_DIR, "renderer/include"),
-        path.join(SKIA_SRC_DIR, "renderer/src"),
-    ]
+        "thirdparty/rive-cpp/",
+        "thirdparty/rive-cpp/include",
+        "thirdparty/rive-cpp/src",
+    ],
+    LIBS=[
+        "rive",
+        "rive_harfbuzz",
+        "rive_sheenbidi"
+    ],
 )
 
-# Add thorvg library
-# TVG_SRC_DIR = "thirdparty/thorvg/"
-# TVG_BIN_DIR = "thirdparty/thorvg/build/src"
-# env.Alias("thorvg", TVG_BIN_DIR)
-# env.Prepend(
-#     LIBS=["thorvg"],
-#     LIBPATH=[TVG_BIN_DIR],
-#     CPPPATH=[
-#         path.join(TVG_SRC_DIR, "inc"),
-#         path.join(TVG_SRC_DIR, "src"),
-#     ]
-# )
-
-# Add rive library
-RIVE_SRC_DIR = "thirdparty/rive-cpp/"
-RIVE_BIN_DIR = "demo/bin/rive"
-env.Alias("rive", RIVE_BIN_DIR)
+# Add skia's dependencies
 env.Prepend(
-    LIBS=["rive"],
-    LIBPATH=[RIVE_BIN_DIR],
+    LIBPATH=[
+        "thirdparty/rive-cpp/skia/renderer/build/macosx/bin/debug",
+        "thirdparty/rive-cpp/skia/dependencies/skia_rive_optimized/out/static",
+    ],
     CPPPATH=[
-        RIVE_SRC_DIR,
-        path.join(RIVE_SRC_DIR, "include"),
-        path.join(RIVE_SRC_DIR, "src")
-    ]
+        "thirdparty/rive-cpp/skia/renderer",
+        "thirdparty/rive-cpp/skia/dependencies/skia_rive_optimized",
+        "thirdparty/rive-cpp/skia/dependencies/skia_rive_optimized/include",
+        "thirdparty/rive-cpp/skia/dependencies/skia_rive_optimized/src",
+    ],
+    LIBS=[
+        # "compression_utils_portable",
+        # "jpeg",
+        # "pathkit",
+        # "png",
+        "rive_skia_renderer",
+        "skia",
+        # "webp_sse41",
+        # "webp",
+        # "zlib",
+    ],
 )
 
 # Add source files

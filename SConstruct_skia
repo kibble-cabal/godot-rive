@@ -183,21 +183,23 @@ def glob_recursive(root_path, pattern):
 env["STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME"] = True
 
 DEP_DIR = "dependencies/"
-SKIA_DIR = DEP_DIR + "skia/out/static/"
+SKIA_DIR = DEP_DIR + "skia_rive_optimized/out/static/"
+
+env.Prepend(
+    LIBPATH=["../../../demo/bin/rive"],
+    LIBS=["rive"],
+)
 
 env.Prepend(
     LIBS=[
-        "jpeg",
-        "particles",
         "compression_utils_portable",
+        "jpeg",
         "pathkit",
         "png",
         "skia",
-        "skresources",
-        "skshaper",
         "webp_sse41",
         "webp",
-        "zlib"
+        "zlib",
     ],
     LIBPATH=[SKIA_DIR]
 )
@@ -207,9 +209,9 @@ env.Prepend(CPPPATH=[
     # dependencies
     "font_converter/include",
     # skia
-    DEP_DIR + "skia",
-    DEP_DIR + "skia/src",
-    DEP_DIR + "skia/include"
+    DEP_DIR + "skia_rive_optimized",
+    DEP_DIR + "skia_rive_optimized/src",
+    DEP_DIR + "skia_rive_optimized/include"
     # renderer
     "renderer/src",
     "renderer/include",
@@ -225,7 +227,7 @@ sources = (
 )
 
 lib = env.SharedLibrary(
-    target="../../../demo/bin/skia/skia",
+    target="../../../demo/bin/skia/renderer",
     source=sources,
 )
 

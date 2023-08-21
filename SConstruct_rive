@@ -5,6 +5,7 @@ import platform
 import sys
 import subprocess
 from SCons.Errors import UserError
+from os import path
 
 #########################
 # Copied from godot-cpp #
@@ -182,32 +183,15 @@ def glob_recursive(root_path, pattern):
 
 env["STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME"] = True
 
-# Append Skia library
-SKIA_BIN_DIR = "skia/dependencies/skia/out/static"
-env.Alias("skia", SKIA_BIN_DIR)
-env.Prepend(
-    LIBS=["skia"],
-    LIBPATH=[SKIA_BIN_DIR],
-    CPPPATH=[
-        "skia/dependencies/skia",
-        "skia/dependencies/skia/src",
-        "skia/dependencies/skia/include",
-    ]
-)
-
 env.Prepend(CPPPATH=[
     "src",
     "include",
-    "skia/renderer/src",
-    "skia/renderer/include",
 ])
 
 sources = (
     glob_recursive("src", "*.cpp")
     + glob_recursive("src", "*.c")
     + glob_recursive("utils", "*.cpp")
-    + glob_recursive("skia/renderer/src", "*.cpp")
-    + glob_recursive("skia/renderer/src", "*.c")
 )
 
 lib = env.SharedLibrary(

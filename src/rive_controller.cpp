@@ -39,10 +39,10 @@ void RiveController::resize(unsigned int width, unsigned int height) {
 }
 
 void RiveController::realign() {
-    if (file) {
+    if (file && renderer) {
         auto transform
             = rive::computeAlignment(fit, alignment, rive::AABB(0, 0, size.x, size.y), file->artboard()->bounds());
-        renderer->transform(transform);
+        // renderer->transform(transform);
         inverse_transform = transform.invertOrIdentity();
     }
 }

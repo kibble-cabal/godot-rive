@@ -21,12 +21,18 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="RiveViewer" type="RiveViewer" parent="."]
-path = "res://examples/on_off.riv"
-fit = 3
-alignment = 5
+_import_path = NodePath("")
+unique_name_in_owner = false
+process_mode = 0
+process_priority = 0
+process_physics_priority = 0
+process_thread_group = 0
+editor_description = ""
+path = "res://examples/gang.riv"
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = null

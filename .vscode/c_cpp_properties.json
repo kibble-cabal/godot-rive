@@ -3,10 +3,14 @@
         {
             "name": "Mac",
             "includePath": [
-                "${workspaceFolder}/**",
-                "${workspaceFolder}/thirdparty/rive-tizen/inc",
-                "${workspaceFolder}/thirdparty/rive-tizen/submodule/include",
-                "${workspaceFolder}/thirdparty/rive-tizen/src/renderer"
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/src/**",
+                "${workspaceFolder}/godot-cpp/include",
+                "${workspaceFolder}/godot-cpp/gen/include",
+                "${workspaceFolder}/thirdparty/rive-cpp",
+                "${workspaceFolder}/thirdparty/rive-cpp/include",
+                "${workspaceFolder}/godot-cpp/gdextension",
+                "${workspaceFolder}/thirdparty/rive-cpp/skia/dependencies/skia"
             ],
             "defines": [],
             "macFrameworkPath": [

@@ -67,10 +67,7 @@ class RiveViewer : public Control {
     Fit fit = Fit::CONTAIN;
     Align alignment = Align::TOP_LEFT;
     int artboard = -1;
-    int state_machine = -1;
-    int animation = -1;
-
-    CerrRedirect _err_output;
+    int scene = -1;
 
    protected:
     static void _bind_methods();
@@ -82,9 +79,6 @@ class RiveViewer : public Control {
     rive::Alignment get_rive_alignment();
 
    public:
-    RiveViewer();
-    ~RiveViewer();
-
     void _draw() override;
     void _process(float delta);
     void _notification(int what);
@@ -99,8 +93,7 @@ class RiveViewer : public Control {
     void set_fit(int value);
     void set_alignment(int value);
     void set_artboard(int value);
-    void set_state_machine(int value);
-    void set_animation(int value);
+    void set_scene(int value);
 
     String get_file_path() {
         return path;
@@ -118,12 +111,8 @@ class RiveViewer : public Control {
         return artboard;
     }
 
-    int get_state_machine() {
-        return state_machine;
-    }
-
-    int get_animation() {
-        return animation;
+    int get_scene() {
+        return scene;
     }
 };
 

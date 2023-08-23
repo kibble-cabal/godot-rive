@@ -22,13 +22,6 @@ bool is_editor_hint() {
     return Engine::get_singleton()->is_editor_hint();
 }
 
-RiveViewer::RiveViewer() {}
-
-RiveViewer::~RiveViewer() {
-    auto output = _err_output.str();
-    if (output.length() > 0) GDERR("Errors: ", output.c_str());
-}
-
 void RiveViewer::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_file_path"), &RiveViewer::get_file_path);
     ClassDB::bind_method(D_METHOD("set_file_path", "value"), &RiveViewer::set_file_path);
@@ -61,27 +54,18 @@ void RiveViewer::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_artboard", "value"), &RiveViewer::set_artboard);
     ClassDB::add_property(
         get_class_static(),
-        PropertyInfo(Variant::INT, "artboard", PROPERTY_HINT_ENUM, "None:-1", PROPERTY_USAGE_NO_EDITOR),
+        PropertyInfo(Variant::INT, "artboard", PROPERTY_HINT_ENUM, "None:-1", PROPERTY_USAGE_NONE),
         "set_artboard",
         "get_artboard"
     );
 
-    ClassDB::bind_method(D_METHOD("get_state_machine"), &RiveViewer::get_state_machine);
-    ClassDB::bind_method(D_METHOD("set_state_machine", "value"), &RiveViewer::set_state_machine);
+    ClassDB::bind_method(D_METHOD("get_scene"), &RiveViewer::get_scene);
+    ClassDB::bind_method(D_METHOD("set_scene", "value"), &RiveViewer::set_scene);
     ClassDB::add_property(
         get_class_static(),
-        PropertyInfo(Variant::INT, "state_machine", PROPERTY_HINT_ENUM, "None:-1", PROPERTY_USAGE_NO_EDITOR),
-        "set_state_machine",
-        "get_state_machine"
-    );
-
-    ClassDB::bind_method(D_METHOD("get_animation"), &RiveViewer::get_animation);
-    ClassDB::bind_method(D_METHOD("set_animation", "value"), &RiveViewer::set_animation);
-    ClassDB::add_property(
-        get_class_static(),
-        PropertyInfo(Variant::INT, "animation", PROPERTY_HINT_ENUM, "None:-1", PROPERTY_USAGE_NO_EDITOR),
-        "set_animation",
-        "get_animation"
+        PropertyInfo(Variant::INT, "scene", PROPERTY_HINT_ENUM, "None:-1", PROPERTY_USAGE_NONE),
+        "set_scene",
+        "get_scene"
     );
 }
 
@@ -132,7 +116,7 @@ void RiveViewer::_notification(int what) {
 void RiveViewer::_ready() {
     if (!is_editor_hint() && path.length() > 0) {
         _on_path_changed();
-        controller->start(artboard, state_machine, animation);
+        controller->start(artboard, scene);
         _on_resize();
     }
 }
@@ -205,8 +189,7 @@ void RiveViewer::_on_path_changed() {
 void RiveViewer::_on_path_changed_in_editor() {
     notify_property_list_changed();
     set_artboard(-1);
-    set_state_machine(-1);
-    set_animation(-1);
+    set_scene(-1);
 }
 
 void RiveViewer::_get_property_list(List<PropertyInfo> *list) const {
@@ -214,10 +197,8 @@ void RiveViewer::_get_property_list(List<PropertyInfo> *list) const {
         String artboard_hint = controller->get_artboard_property_hint();
         list->push_back(PropertyInfo(Variant::INT, "artboard", PROPERTY_HINT_ENUM, artboard_hint));
         if (artboard != -1) {
-            String state_machine_hint = controller->get_state_machine_property_hint(artboard);
-            list->push_back(PropertyInfo(Variant::INT, "state_machine", PROPERTY_HINT_ENUM, state_machine_hint));
-            String animation_hint = controller->get_animation_property_hint(artboard);
-            list->push_back(PropertyInfo(Variant::INT, "animation", PROPERTY_HINT_ENUM, animation_hint));
+            String scene_hint = controller->get_scene_property_hint(artboard);
+            list->push_back(PropertyInfo(Variant::INT, "scene", PROPERTY_HINT_ENUM, scene_hint));
         }
     }
 }
@@ -239,15 +220,12 @@ void RiveViewer::set_alignment(int value) {
 }
 
 void RiveViewer::set_artboard(int value) {
+    if (artboard != value) set_scene(-1);
     artboard = value;
     if (controller) controller->set_artboard(value);
     notify_property_list_changed();
 }
 
-void RiveViewer::set_state_machine(int value) {
-    state_machine = value;
-}
-
-void RiveViewer::set_animation(int value) {
-    animation = value;
+void RiveViewer::set_scene(int value) {
+    scene = value;
 }

@@ -6,6 +6,7 @@
 
 // Godot
 #include <godot_cpp/variant/packed_byte_array.hpp>
+#include <godot_cpp/variant/packed_string_array.hpp>
 #include <godot_cpp/variant/string.hpp>
 
 // Rive
@@ -39,20 +40,26 @@ class RiveController {
     Ptr<rive::SkiaFactory> factory = nullptr;
     Ptr<rive::ArtboardInstance> artboard = nullptr;
     Ptr<rive::Scene> scene = nullptr;
+    Ptr<rive::LinearAnimationInstance> animation = nullptr;
     rive::Mat2D inverse_transform;
 
    public:
     RiveController();
     RiveController(godot::String path_value);
     void load();
-    void start();
+    void start(int artboard_index, int scene_index, int animation_index);
     void resize(unsigned int width, unsigned int height);
     void pointer_down(rive::Vec2D position);
     void pointer_up(rive::Vec2D position);
     void pointer_move(rive::Vec2D position);
     void realign();
     void realign(rive::Fit fit, rive::Alignment align);
-
+    void set_artboard(int artboard_index);
+    void set_scene(int scene_index);
+    void set_animation(int animation_index);
+    godot::String get_artboard_property_hint();
+    godot::String get_state_machine_property_hint(int artboard_index);
+    godot::String get_animation_property_hint(int artboard_index);
     godot::PackedByteArray frame(float delta);
 
    private:

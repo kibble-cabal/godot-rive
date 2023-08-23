@@ -58,7 +58,7 @@ class RiveViewer : public Control {
         BOTTOM_RIGHT = 9
     };
 
-    Ptr<RiveController> controller = nullptr;
+    Ptr<RiveController> controller = rivestd::make_unique<RiveController>();
     Ref<Image> image = nullptr;
     Ref<ImageTexture> texture = nullptr;
 
@@ -66,11 +66,17 @@ class RiveViewer : public Control {
     String path;
     Fit fit = Fit::CONTAIN;
     Align alignment = Align::TOP_LEFT;
+    int artboard = -1;
+    int state_machine = -1;
+    int animation = -1;
+
     CerrRedirect _err_output;
 
    protected:
     static void _bind_methods();
     void _on_resize();
+    void _on_path_changed();
+    void _on_path_changed_in_editor();
 
     rive::Fit get_rive_fit();
     rive::Alignment get_rive_alignment();
@@ -84,24 +90,41 @@ class RiveViewer : public Control {
     void _notification(int what);
     void _gui_input(const Ref<InputEvent> &event) override;
     void _ready() override;
+    void _get_property_list(List<PropertyInfo> *p_list) const;
 
     int width();
     int height();
 
-    String get_file_path();
     void set_file_path(String value);
+    void set_fit(int value);
+    void set_alignment(int value);
+    void set_artboard(int value);
+    void set_state_machine(int value);
+    void set_animation(int value);
+
+    String get_file_path() {
+        return path;
+    }
 
     int get_fit() {
         return fit;
     }
 
-    void set_fit(int value);
-
     int get_alignment() {
         return alignment;
     }
 
-    void set_alignment(int value);
+    int get_artboard() {
+        return artboard;
+    }
+
+    int get_state_machine() {
+        return state_machine;
+    }
+
+    int get_animation() {
+        return animation;
+    }
 };
 
 #endif

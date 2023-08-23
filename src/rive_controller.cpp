@@ -16,19 +16,17 @@ SkImageInfo RiveController::make_image_info() {
 void RiveController::load() {
     factory = rivestd::make_unique<rive::SkiaFactory>();
     file = read_rive_file(path, factory.get());
-    if (file == nullptr) GDERR("Failed to import <", path, ">.");
-    else {
+    if (file != nullptr) {
         resize(size.x, size.y);
         GDPRINT("Successfully imported <", path, ">!");
-        artboard = file->artboardDefault();
-        if (artboard) GDPRINTS("Width:", artboard->width(), "Height:", artboard->height());
     }
 }
 
-void RiveController::start() {
-    if (file && artboard) {
-        scene = artboard->defaultScene();
-    }
+void RiveController::start(int artboard_index, int scene_index, int animation_index) {
+    set_artboard(artboard_index);
+    set_scene(scene_index);
+    set_animation(animation_index);
+    if (artboard_index == -1) GDERR("Started rive animation, but no artboard selected.");
 }
 
 void RiveController::resize(unsigned int width, unsigned int height) {
@@ -55,11 +53,14 @@ void RiveController::realign(rive::Fit fit_value, rive::Alignment align_value) {
 
 godot::PackedByteArray RiveController::frame(float delta) {
     if (!file || !renderer || !surface || !artboard) {
-        GDPRINT("Unable to render frame.");
         return godot::PackedByteArray();
     }
     elapsed += delta;
-    if (scene ? scene->advanceAndApply(delta) : artboard->advance(delta)) {
+    bool did_advance = false;
+    if (scene) did_advance = scene->advanceAndApply(delta);
+    else if (animation) did_advance = animation->advanceAndApply(delta);
+    else did_advance = artboard->advance(delta);
+    if (did_advance) {
         surface->getCanvas()->clear(SkColors::kTransparent);
         artboard->draw(renderer.get());
         return byte_array();
@@ -79,6 +80,21 @@ void RiveController::pointer_move(rive::Vec2D position) {
     if (scene) scene->pointerMove(inverse_transform * position);
 }
 
+void RiveController::set_artboard(int index) {
+    if (index == -1) artboard = nullptr;
+    else if (file && file->artboardCount() > index) artboard = file->artboardAt(index);
+}
+
+void RiveController::set_scene(int index) {
+    if (index == -1) scene = nullptr;
+    else if (artboard && artboard->stateMachineCount() > index) scene = artboard->stateMachineAt(index);
+}
+
+void RiveController::set_animation(int index) {
+    if (index == -1) animation = nullptr;
+    else if (artboard && artboard->animationCount() > index) animation = artboard->animationAt(index);
+}
+
 godot::PackedByteArray RiveController::byte_array() {
     if (!surface) return godot::PackedByteArray();
     sk_sp<SkData> data = surface->makeImageSnapshot()->encodeToData();
@@ -89,4 +105,49 @@ godot::PackedByteArray RiveController::byte_array() {
         arr[i] = bytes[i];
     }
     return arr;
+}
+
+godot::String RiveController::get_artboard_property_hint() {
+    godot::PackedStringArray hints;
+    hints.append("None:-1");
+    if (file) {
+        for (int i = 0; i < file->artboardCount(); i++) {
+            auto ab = file->artboardAt(i);
+            hints.append(
+                godot::String(ab->name().c_str()) + godot::String(":") + godot::String(std::to_string(i).c_str())
+            );
+        }
+    }
+    return godot::String(",").join(hints);
+}
+
+godot::String RiveController::get_state_machine_property_hint(int artboard_index) {
+    godot::PackedStringArray hints;
+    hints.append("None:-1");
+    if (file && artboard_index >= 0 && file->artboardCount() > artboard_index) {
+        auto ab = file->artboardAt(artboard_index);
+        for (int i = 0; i < ab->stateMachineCount(); i++) {
+            auto state_machine = ab->stateMachineAt(i);
+            hints.append(
+                godot::String(state_machine->name().c_str()) + godot::String(":")
+                + godot::String(std::to_string(i).c_str())
+            );
+        }
+    }
+    return godot::String(",").join(hints);
+}
+
+godot::String RiveController::get_animation_property_hint(int artboard_index) {
+    godot::PackedStringArray hints;
+    hints.append("None:-1");
+    if (file && artboard_index >= 0 && file->artboardCount() > artboard_index) {
+        auto ab = file->artboardAt(artboard_index);
+        for (int i = 0; i < artboard->animationCount(); i++) {
+            auto animation = artboard->animationAt(i);
+            hints.append(
+                godot::String(animation->name().c_str()) + godot::String(":") + godot::String(std::to_string(i).c_str())
+            );
+        }
+    }
+    return godot::String(",").join(hints);
 }

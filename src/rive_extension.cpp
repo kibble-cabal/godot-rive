@@ -56,6 +56,33 @@ void RiveViewer::_bind_methods() {
         "set_alignment",
         "get_alignment"
     );
+
+    ClassDB::bind_method(D_METHOD("get_artboard"), &RiveViewer::get_artboard);
+    ClassDB::bind_method(D_METHOD("set_artboard", "value"), &RiveViewer::set_artboard);
+    ClassDB::add_property(
+        get_class_static(),
+        PropertyInfo(Variant::INT, "artboard", PROPERTY_HINT_ENUM, "None:-1", PROPERTY_USAGE_NO_EDITOR),
+        "set_artboard",
+        "get_artboard"
+    );
+
+    ClassDB::bind_method(D_METHOD("get_state_machine"), &RiveViewer::get_state_machine);
+    ClassDB::bind_method(D_METHOD("set_state_machine", "value"), &RiveViewer::set_state_machine);
+    ClassDB::add_property(
+        get_class_static(),
+        PropertyInfo(Variant::INT, "state_machine", PROPERTY_HINT_ENUM, "None:-1", PROPERTY_USAGE_NO_EDITOR),
+        "set_state_machine",
+        "get_state_machine"
+    );
+
+    ClassDB::bind_method(D_METHOD("get_animation"), &RiveViewer::get_animation);
+    ClassDB::bind_method(D_METHOD("set_animation", "value"), &RiveViewer::set_animation);
+    ClassDB::add_property(
+        get_class_static(),
+        PropertyInfo(Variant::INT, "animation", PROPERTY_HINT_ENUM, "None:-1", PROPERTY_USAGE_NO_EDITOR),
+        "set_animation",
+        "get_animation"
+    );
 }
 
 void RiveViewer::_gui_input(const Ref<InputEvent> &event) {
@@ -96,18 +123,16 @@ void RiveViewer::_process(float delta) {
 }
 
 void RiveViewer::_notification(int what) {
-    if (is_node_ready() && controller) switch (what) {
-            case NOTIFICATION_RESIZED:
-                _on_resize();
-        }
+    switch (what) {
+        case NOTIFICATION_RESIZED:
+            _on_resize();
+    }
 }
 
 void RiveViewer::_ready() {
     if (!is_editor_hint() && path.length() > 0) {
-        controller = rivestd::make_unique<RiveController>(path);
-        controller->realign(get_rive_fit(), get_rive_alignment());
-        controller->load();
-        controller->start();
+        _on_path_changed();
+        controller->start(artboard, state_machine, animation);
         _on_resize();
     }
 }
@@ -164,12 +189,43 @@ int RiveViewer::height() {
     return std::max(get_size().y, (real_t)1);
 }
 
-String RiveViewer::get_file_path() {
-    return path;
+void RiveViewer::_on_resize() {
+    if (controller) controller->resize(width(), height());
+    image = Image::create(width(), height(), false, IMAGE_FORMAT);
+    texture = ImageTexture::create_from_image(image);
+}
+
+void RiveViewer::_on_path_changed() {
+    controller->path = path;
+    controller->load();
+    controller->realign(get_rive_fit(), get_rive_alignment());
+    controller->resize(width(), height());
+}
+
+void RiveViewer::_on_path_changed_in_editor() {
+    notify_property_list_changed();
+    set_artboard(-1);
+    set_state_machine(-1);
+    set_animation(-1);
+}
+
+void RiveViewer::_get_property_list(List<PropertyInfo> *list) const {
+    if (controller) {
+        String artboard_hint = controller->get_artboard_property_hint();
+        list->push_back(PropertyInfo(Variant::INT, "artboard", PROPERTY_HINT_ENUM, artboard_hint));
+        if (artboard != -1) {
+            String state_machine_hint = controller->get_state_machine_property_hint(artboard);
+            list->push_back(PropertyInfo(Variant::INT, "state_machine", PROPERTY_HINT_ENUM, state_machine_hint));
+            String animation_hint = controller->get_animation_property_hint(artboard);
+            list->push_back(PropertyInfo(Variant::INT, "animation", PROPERTY_HINT_ENUM, animation_hint));
+        }
+    }
 }
 
 void RiveViewer::set_file_path(String value) {
     path = value;
+    _on_path_changed();
+    if (is_editor_hint()) _on_path_changed_in_editor();
 }
 
 void RiveViewer::set_fit(int value) {
@@ -182,8 +238,16 @@ void RiveViewer::set_alignment(int value) {
     if (controller) controller->realign(get_rive_fit(), get_rive_alignment());
 }
 
-void RiveViewer::_on_resize() {
-    if (controller) controller->resize(width(), height());
-    image = Image::create(width(), height(), false, IMAGE_FORMAT);
-    texture = ImageTexture::create_from_image(image);
+void RiveViewer::set_artboard(int value) {
+    artboard = value;
+    if (controller) controller->set_artboard(value);
+    notify_property_list_changed();
+}
+
+void RiveViewer::set_state_machine(int value) {
+    state_machine = value;
+}
+
+void RiveViewer::set_animation(int value) {
+    animation = value;
 }

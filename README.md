@@ -39,7 +39,7 @@ It makes use of the following third-party libraries:
 - [x] Raster image support
 - [x] Input events (hover, pressed, etc.)
 - [x] Alignment & size exported properties
-- [ ] Multiple scenes
+- [x] Multiple scenes/artboards
 - [ ] Dynamic exported properties based on state machine
 - [ ] Windows/Linux support
 - [ ] iOS/Android support

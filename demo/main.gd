@@ -1,7 +1,7 @@
 extends Control
 
 
-func _ready() -> void:
+func _init() -> void:
 	# Print time for debugging
 	var date = Time.get_datetime_dict_from_system(false)
 	date.period = "pm" if date.hour >= 12 and date.hour != 24 else "am"

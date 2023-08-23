@@ -41,19 +41,6 @@ env.Prepend(
     ]
 )
 
-# Add thorvg library
-# TVG_SRC_DIR = "thirdparty/thorvg/"
-# TVG_BIN_DIR = "thirdparty/thorvg/build/src"
-# env.Alias("thorvg", TVG_BIN_DIR)
-# env.Prepend(
-#     LIBS=["thorvg"],
-#     LIBPATH=[TVG_BIN_DIR],
-#     CPPPATH=[
-#         path.join(TVG_SRC_DIR, "inc"),
-#         path.join(TVG_SRC_DIR, "src"),
-#     ]
-# )
-
 # Add rive library
 RIVE_SRC_DIR = "thirdparty/rive-cpp/"
 RIVE_BIN_DIR = "demo/bin/rive"

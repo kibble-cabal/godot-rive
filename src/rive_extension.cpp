@@ -49,24 +49,6 @@ void RiveViewer::_bind_methods() {
         "set_alignment",
         "get_alignment"
     );
-
-    ClassDB::bind_method(D_METHOD("get_artboard"), &RiveViewer::get_artboard);
-    ClassDB::bind_method(D_METHOD("set_artboard", "value"), &RiveViewer::set_artboard);
-    ClassDB::add_property(
-        get_class_static(),
-        PropertyInfo(Variant::INT, "artboard", PROPERTY_HINT_ENUM, "None:-1", PROPERTY_USAGE_NONE),
-        "set_artboard",
-        "get_artboard"
-    );
-
-    ClassDB::bind_method(D_METHOD("get_scene"), &RiveViewer::get_scene);
-    ClassDB::bind_method(D_METHOD("set_scene", "value"), &RiveViewer::set_scene);
-    ClassDB::add_property(
-        get_class_static(),
-        PropertyInfo(Variant::INT, "scene", PROPERTY_HINT_ENUM, "None:-1", PROPERTY_USAGE_NONE),
-        "set_scene",
-        "get_scene"
-    );
 }
 
 void RiveViewer::_gui_input(const Ref<InputEvent> &event) {
@@ -228,4 +210,30 @@ void RiveViewer::set_artboard(int value) {
 
 void RiveViewer::set_scene(int value) {
     scene = value;
+}
+
+bool RiveViewer::_set(const StringName &prop, const Variant &value) {
+    String name = prop;
+    if (name == "artboard") {
+        set_artboard((int)value);
+        return true;
+    }
+    if (name == "scene") {
+        set_scene((int)value);
+        return true;
+    }
+    return false;
+}
+
+bool RiveViewer::_get(const StringName &prop, Variant &return_value) const {
+    String name = prop;
+    if (name == "artboard") {
+        return_value = artboard;
+        return true;
+    }
+    if (name == "scene") {
+        return_value = scene;
+        return true;
+    }
+    return false;
 }

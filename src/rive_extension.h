@@ -85,6 +85,8 @@ class RiveViewer : public Control {
     void _gui_input(const Ref<InputEvent> &event) override;
     void _ready() override;
     void _get_property_list(List<PropertyInfo> *p_list) const;
+    bool _set(const StringName &prop, const Variant &value);
+    bool _get(const StringName &prop, Variant &return_value) const;
 
     int width();
     int height();
@@ -105,14 +107,6 @@ class RiveViewer : public Control {
 
     int get_alignment() {
         return alignment;
-    }
-
-    int get_artboard() {
-        return artboard;
-    }
-
-    int get_scene() {
-        return scene;
     }
 };
 

@@ -15,6 +15,7 @@
 #include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/core/binder_common.hpp>
 #include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
 
 // rive-cpp
 #include <rive/animation/state_machine_instance.hpp>
@@ -68,6 +69,7 @@ class RiveViewer : public Control {
     Align alignment = Align::TOP_LEFT;
     int artboard = -1;
     int scene = -1;
+    Dictionary scene_properties;
 
    protected:
     static void _bind_methods();

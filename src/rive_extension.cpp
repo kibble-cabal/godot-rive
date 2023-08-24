@@ -98,7 +98,7 @@ void RiveViewer::_notification(int what) {
 void RiveViewer::_ready() {
     if (!is_editor_hint() && path.length() > 0) {
         _on_path_changed();
-        controller->start(artboard, scene);
+        controller->start(artboard, scene, scene_properties);
         _on_resize();
     }
 }
@@ -182,6 +182,10 @@ void RiveViewer::_get_property_list(List<PropertyInfo> *list) const {
             String scene_hint = controller->get_scene_property_hint(artboard);
             list->push_back(PropertyInfo(Variant::INT, "scene", PROPERTY_HINT_ENUM, scene_hint));
         }
+        if (scene != -1) {
+            list->push_back(PropertyInfo(Variant::NIL, "Scene", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_CATEGORY));
+            controller->get_scene_property_list(list);
+        }
     }
 }
 
@@ -210,6 +214,8 @@ void RiveViewer::set_artboard(int value) {
 
 void RiveViewer::set_scene(int value) {
     scene = value;
+    if (controller) controller->set_scene(value);
+    notify_property_list_changed();
 }
 
 bool RiveViewer::_set(const StringName &prop, const Variant &value) {
@@ -220,6 +226,10 @@ bool RiveViewer::_set(const StringName &prop, const Variant &value) {
     }
     if (name == "scene") {
         set_scene((int)value);
+        return true;
+    }
+    if (controller && controller->get_scene_property_names().has(name)) {
+        scene_properties[name] = value;
         return true;
     }
     return false;
@@ -233,6 +243,10 @@ bool RiveViewer::_get(const StringName &prop, Variant &return_value) const {
     }
     if (name == "scene") {
         return_value = scene;
+        return true;
+    }
+    if (scene_properties.has(name)) {
+        return_value = scene_properties[name];
         return true;
     }
     return false;

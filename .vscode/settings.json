@@ -98,6 +98,10 @@
         "scoped_allocator": "cpp",
         "shared_mutex": "cpp",
         "span": "cpp",
-        "typeindex": "cpp"
+        "typeindex": "cpp",
+        "memory_resource": "cpp",
+        "utility": "cpp",
+        "*.def": "cpp",
+        "*.gen": "cpp"
     }
 }

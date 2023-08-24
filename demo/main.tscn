@@ -21,9 +21,10 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="RiveViewer" type="RiveViewer" parent="."]
-path = "res://examples/notification.riv"
+path = "res://examples/rating-animation.riv"
 artboard = 0
 scene = 0
+rating = 3.0
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

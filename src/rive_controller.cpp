@@ -1,5 +1,10 @@
 #include "rive_controller.h"
 
+// rive-cpp
+#include <rive/animation/state_machine_bool.hpp>
+#include <rive/animation/state_machine_input_instance.hpp>
+#include <rive/animation/state_machine_number.hpp>
+
 #include "utils/read_rive_file.hpp"
 #include "utils/types.hpp"
 
@@ -22,9 +27,10 @@ void RiveController::load() {
     }
 }
 
-void RiveController::start(int artboard_index, int scene_index) {
+void RiveController::start(int artboard_index, int scene_index, const godot::Dictionary &scene_properties) {
     set_artboard(artboard_index);
     set_scene(scene_index);
+    set_scene_properties(scene_properties);
     if (artboard_index == -1) GDERR("Started rive animation, but no artboard selected.");
 }
 
@@ -127,4 +133,37 @@ godot::String RiveController::get_scene_property_hint(int artboard_index) {
         }
     }
     return godot::String(",").join(hints);
+}
+
+godot::PackedStringArray RiveController::get_scene_property_names() {
+    godot::PackedStringArray names;
+    if (scene)
+        for (int i = 0; i < scene->inputCount(); i++) {
+            auto input = scene->input(i);
+            names.append(input->name().c_str());
+        }
+    return names;
+}
+
+void RiveController::get_scene_property_list(godot::List<godot::PropertyInfo> *list) {
+    if (scene)
+        for (int i = 0; i < scene->inputCount(); i++) {
+            auto input = scene->input(i);
+            godot::Variant::Type type;
+            if (input->input()->is<StateMachineBool>()) type = godot::Variant::BOOL;
+            if (input->input()->is<StateMachineNumber>()) type = godot::Variant::FLOAT;
+            list->push_back(godot::PropertyInfo(type, input->name().c_str()));
+        }
+}
+
+void RiveController::set_scene_properties(const godot::Dictionary &props) {
+    if (scene)
+        for (int i = 0; i < scene->inputCount(); i++) {
+            auto input = scene->input(i);
+            godot::String input_name = input->name().c_str();
+            if (props.has(input_name)) {
+                if (input->input()->is<StateMachineBool>()) static_cast<SMIBool *>(input)->value(props[input_name]);
+                if (input->input()->is<StateMachineNumber>()) static_cast<SMINumber *>(input)->value(props[input_name]);
+            }
+        }
 }

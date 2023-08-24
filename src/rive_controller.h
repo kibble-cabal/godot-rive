@@ -5,6 +5,9 @@
 #include <vector>
 
 // Godot
+#include <godot_cpp/core/property_info.hpp>
+#include <godot_cpp/templates/list.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/packed_byte_array.hpp>
 #include <godot_cpp/variant/packed_string_array.hpp>
 #include <godot_cpp/variant/string.hpp>
@@ -46,7 +49,7 @@ class RiveController {
     RiveController();
     RiveController(godot::String path_value);
     void load();
-    void start(int artboard_index, int scene_index);
+    void start(int artboard_index, int scene_index, const godot::Dictionary &scene_properties);
     void resize(unsigned int width, unsigned int height);
     void pointer_down(rive::Vec2D position);
     void pointer_up(rive::Vec2D position);
@@ -57,7 +60,10 @@ class RiveController {
     void set_scene(int scene_index);
     godot::String get_artboard_property_hint();
     godot::String get_scene_property_hint(int artboard_index);
+    godot::PackedStringArray get_scene_property_names();
+    void get_scene_property_list(godot::List<godot::PropertyInfo> *list);
     godot::PackedByteArray frame(float delta);
+    void set_scene_properties(const godot::Dictionary &props);
 
    private:
     godot::PackedByteArray byte_array();

@@ -40,11 +40,12 @@ It makes use of the following third-party libraries:
 - [x] Input events (hover, pressed, etc.)
 - [x] Alignment & size exported properties
 - [x] Multiple scenes/artboards
-- [ ] Dynamic exported properties based on state machine
-- [ ] Windows/Linux support
-- [ ] iOS/Android support
+- [x] Dynamic exported properties based on state machine
+- [ ] API for interaction during play (e.g. `set_scene_prop`, `reset_to_start`, etc.)
+- [ ] Disable/enable event listeners (hover, pressed, etc) in API and editor
 - [ ] Optimization
 - [ ] Editor preview
-- [ ] Thumbnails
+- [ ] Windows/Linux support
+- [ ] iOS/Android support
 - [ ] Any missing features
-- [ ] `.riv` ResourceLoader
+- [ ] `.riv` ResourceLoade (thumbnails)

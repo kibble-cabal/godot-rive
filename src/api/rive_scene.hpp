@@ -41,8 +41,8 @@ class RiveScene : public Resource {
         ClassDB::bind_method(D_METHOD("get_bounds"), &RiveScene::get_bounds);
         ClassDB::bind_method(D_METHOD("get_duration"), &RiveScene::get_duration);
         ClassDB::bind_method(D_METHOD("is_opaque"), &RiveScene::is_opaque);
-        ClassDB::bind_method(D_METHOD("get_input_by_name", "name"), &RiveScene::get_input_by_name);
-        ClassDB::bind_method(D_METHOD("get_input_by_index", "index"), &RiveScene::get_input_by_index);
+        ClassDB::bind_method(D_METHOD("find_input", "name"), &RiveScene::find_input);
+        ClassDB::bind_method(D_METHOD("get_input", "index"), &RiveScene::get_input);
     }
 
     void cache_inputs() {
@@ -98,7 +98,7 @@ class RiveScene : public Resource {
         return scene ? !scene->isTranslucent() : true;
     }
 
-    Ref<RiveInput> get_input_by_name(String name) const {
+    Ref<RiveInput> find_input(String name) const {
         for (int i = 0; i < get_input_count(); i++) {
             Ref<RiveInput> input = inputs[i];
             if (input->get_name() == name) return input;
@@ -106,7 +106,7 @@ class RiveScene : public Resource {
         return nullptr;
     }
 
-    Ref<RiveInput> get_input_by_index(int index) const {
+    Ref<RiveInput> get_input(int index) const {
         if (index >= 0 && index < get_input_count()) return inputs[index];
         return nullptr;
     }

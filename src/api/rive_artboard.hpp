@@ -17,6 +17,7 @@
 #include <rive/math/transform_components.hpp>
 
 // extension
+#include "api/rive_animation.hpp"
 #include "api/rive_scene.hpp"
 
 using namespace godot;
@@ -28,6 +29,7 @@ class RiveArtboard : public Resource {
     rive::File *file;
     rive::ArtboardInstance *artboard;
     TypedArray<RiveScene> scenes;
+    TypedArray<RiveAnimation> animations;
     int index = -1;
 
     friend class RiveFile;
@@ -40,9 +42,12 @@ class RiveArtboard : public Resource {
         ClassDB::bind_method(D_METHOD("get_name"), &RiveArtboard::get_name);
         ClassDB::bind_method(D_METHOD("get_scenes"), &RiveArtboard::get_scenes);
         ClassDB::bind_method(D_METHOD("get_scene_count"), &RiveArtboard::get_scene_count);
+        ClassDB::bind_method(D_METHOD("get_animations"), &RiveArtboard::get_animations);
+        ClassDB::bind_method(D_METHOD("get_animation_count"), &RiveArtboard::get_animation_count);
         ClassDB::bind_method(D_METHOD("get_bounds"), &RiveArtboard::get_bounds);
-        ClassDB::bind_method(D_METHOD("get_scene_by_index", "index"), &RiveArtboard::get_scene_by_index);
-        ClassDB::bind_method(D_METHOD("get_scene_by_name", "name"), &RiveArtboard::get_scene_by_name);
+        ClassDB::bind_method(D_METHOD("get_scene", "index"), &RiveArtboard::get_scene);
+        ClassDB::bind_method(D_METHOD("find_scene", "name"), &RiveArtboard::find_scene);
+        ClassDB::bind_method(D_METHOD("get_animation", "index"), &RiveArtboard::get_animation);
         ClassDB::bind_method(D_METHOD("get_world_transform"), &RiveArtboard::get_world_transform);
     }
 
@@ -56,6 +61,16 @@ class RiveArtboard : public Resource {
         }
     }
 
+    void cache_animations() {
+        animations.clear();
+        if (artboard) {
+            int size = artboard->animationCount();
+            animations.resize(size);
+            for (int i = 0; i < size; i++)
+                animations[i] = RiveAnimation::MakeRef(artboard, artboard->animationAt(i).get(), i);
+        }
+    }
+
    public:
     static Ref<RiveArtboard> MakeRef(
         rive::File *file_value, rive::ArtboardInstance *artboard_value, int index_value = -1
@@ -66,6 +81,7 @@ class RiveArtboard : public Resource {
         obj->artboard = artboard_value;
         obj->index = index_value;
         obj->cache_scenes();
+        obj->cache_animations();
         return obj;
     }
 
@@ -87,8 +103,16 @@ class RiveArtboard : public Resource {
         return scenes.size();
     }
 
+    int get_animation_count() const {
+        return animations.size();
+    }
+
     TypedArray<RiveScene> get_scenes() const {
         return scenes;
+    }
+
+    TypedArray<RiveAnimation> get_animations() const {
+        return animations;
     }
 
     Rect2 get_bounds() const {
@@ -109,16 +133,21 @@ class RiveArtboard : public Resource {
         return Transform2D();
     }
 
-    Ref<RiveScene> get_scene_by_index(int index) const {
+    Ref<RiveScene> get_scene(int index) const {
         if (index >= 0 && index < get_scene_count()) return scenes[index];
         return nullptr;
     }
 
-    Ref<RiveScene> get_scene_by_name(String name) const {
+    Ref<RiveScene> find_scene(String name) const {
         for (int i = 0; i < get_scene_count(); i++) {
             Ref<RiveScene> scene = scenes[i];
             if (scene->get_name() == name) return scene;
         }
+        return nullptr;
+    }
+
+    Ref<RiveAnimation> get_animation(int index) const {
+        if (index >= 0 && index < get_animation_count()) return animations[index];
         return nullptr;
     }
 

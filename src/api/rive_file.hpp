@@ -38,8 +38,8 @@ class RiveFile : public Resource {
         ClassDB::bind_method(D_METHOD("get_path"), &RiveFile::get_path);
         ClassDB::bind_method(D_METHOD("get_artboards"), &RiveFile::get_artboards);
         ClassDB::bind_method(D_METHOD("get_artboard_count"), &RiveFile::get_artboard_count);
-        ClassDB::bind_method(D_METHOD("get_artboard_by_index", "index"), &RiveFile::get_artboard_by_index);
-        ClassDB::bind_method(D_METHOD("get_artboard_by_name", "name"), &RiveFile::get_artboard_by_name);
+        ClassDB::bind_method(D_METHOD("get_artboard", "index"), &RiveFile::get_artboard);
+        ClassDB::bind_method(D_METHOD("find_artboard", "name"), &RiveFile::find_artboard);
     }
 
     void cache_artboards() {
@@ -79,12 +79,12 @@ class RiveFile : public Resource {
         return artboards.size();
     }
 
-    Ref<RiveArtboard> get_artboard_by_index(int index) const {
+    Ref<RiveArtboard> get_artboard(int index) const {
         if (index > 0 && artboards.size() > index) return artboards[index];
         return nullptr;
     }
 
-    Ref<RiveArtboard> get_artboard_by_name(String name) const {
+    Ref<RiveArtboard> find_artboard(String name) const {
         std::string artboard_name = (char *)name.ptrw();
         for (int i = 0; i < get_artboard_count(); i++) {
             Ref<RiveArtboard> artboard = artboards[i];

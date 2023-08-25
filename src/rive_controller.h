@@ -35,14 +35,17 @@ class RiveController {
     rive::Fit fit = rive::Fit::contain;
     rive::Alignment alignment = rive::Alignment::topLeft;
 
-   private:
     float elapsed = 0;
+
+    friend class RiveViewer;
+
+   private:
     Ptr<rive::File> file = nullptr;
     sk_sp<SkSurface> surface = nullptr;
     Ptr<rive::SkiaRenderer> renderer = nullptr;
     Ptr<rive::SkiaFactory> factory = nullptr;
     Ptr<rive::ArtboardInstance> artboard = nullptr;
-    Ptr<rive::Scene> scene = nullptr;
+    Ptr<rive::StateMachineInstance> scene = nullptr;
     rive::Mat2D inverse_transform;
 
    public:

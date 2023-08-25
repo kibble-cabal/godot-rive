@@ -19,7 +19,18 @@
             "compilerPath": "/usr/bin/clang",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "macos-clang-arm64"
+            "intelliSenseMode": "macos-clang-arm64",
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "path": [
+                    "${workspaceFolder}/src",
+                    "${workspaceFolder}/godot-cpp/include",
+                    "${workspaceFolder}/godot-cpp/gen/include",
+                    "${workspaceFolder}/thirdparty/rive-cpp/include",
+                    "${workspaceFolder}/thirdparty/rive-cpp/skia/dependencies/skia/include",
+                    "${workspaceFolder}/thirdparty/rive-cpp/skia/renderer/include"
+                ]
+            }
         }
     ],
     "version": 4

@@ -49,6 +49,14 @@ void RiveViewer::_bind_methods() {
         "set_alignment",
         "get_alignment"
     );
+
+    /* API methods */
+    ClassDB::bind_method(D_METHOD("get_elapsed_time"), &RiveViewer::get_elapsed_time);
+    ClassDB::bind_method(D_METHOD("get_file"), &RiveViewer::get_file);
+    ClassDB::bind_method(D_METHOD("get_artboard"), &RiveViewer::get_artboard);
+    ClassDB::bind_method(D_METHOD("get_scene"), &RiveViewer::get_scene);
+    ClassDB::bind_method(D_METHOD("go_to_artboard", "artboard"), &RiveViewer::go_to_artboard);
+    ClassDB::bind_method(D_METHOD("go_to_scene", "scene"), &RiveViewer::go_to_scene);
 }
 
 void RiveViewer::_gui_input(const Ref<InputEvent> &event) {
@@ -250,4 +258,38 @@ bool RiveViewer::_get(const StringName &prop, Variant &return_value) const {
         return true;
     }
     return false;
+}
+
+float RiveViewer::get_elapsed_time() const {
+    if (controller) return controller->elapsed;
+    return 0.0;
+}
+
+Ref<RiveFile> RiveViewer::get_file() const {
+    if (controller) return RiveFile::MakeRef(controller->file.get(), path);
+    return nullptr;
+}
+
+Ref<RiveArtboard> RiveViewer::get_artboard() const {
+    if (controller) return RiveArtboard::MakeRef(controller->file.get(), controller->artboard.get());
+    return nullptr;
+}
+
+Ref<RiveScene> RiveViewer::get_scene() const {
+    if (controller) return RiveScene::MakeRef(controller->artboard.get(), controller->scene.get());
+    return nullptr;
+}
+
+void RiveViewer::go_to_artboard(Ref<RiveArtboard> artboard_value) {
+    if (artboard_value != nullptr && !artboard_value.is_null() && artboard_value->exists()) {
+        set_artboard(artboard_value->get_index());
+        if (controller && is_inside_tree()) controller->start(artboard, scene, scene_properties);
+    }
+}
+
+void RiveViewer::go_to_scene(Ref<RiveScene> scene_value) {
+    if (scene_value != nullptr && !scene_value.is_null() && scene_value->exists()) {
+        set_scene(scene_value->get_index());
+        if (controller && is_inside_tree()) controller->start(artboard, scene, scene_properties);
+    }
 }

@@ -16,6 +16,10 @@ void initialize_rive_module(ModuleInitializationLevel p_level) {
     }
 
     ClassDB::register_class<RiveViewer>();
+    ClassDB::register_class<RiveFile>();
+    ClassDB::register_class<RiveArtboard>();
+    ClassDB::register_class<RiveScene>();
+    ClassDB::register_class<RiveInput>();
 }
 
 void uninitialize_rive_module(ModuleInitializationLevel p_level) {
@@ -31,17 +35,11 @@ extern "C" {
         GDExtensionClassLibraryPtr p_library,
         GDExtensionInitialization *r_initialization
     ) {
-        godot::GDExtensionBinding::InitObject init_obj(
-            p_get_proc_address,
-            p_library,
-            r_initialization
-        );
+        godot::GDExtensionBinding::InitObject init_obj(p_get_proc_address, p_library, r_initialization);
 
         init_obj.register_initializer(initialize_rive_module);
         init_obj.register_terminator(uninitialize_rive_module);
-        init_obj.set_minimum_library_initialization_level(
-            MODULE_INITIALIZATION_LEVEL_SCENE
-        );
+        init_obj.set_minimum_library_initialization_level(MODULE_INITIALIZATION_LEVEL_SCENE);
 
         return init_obj.init();
     }

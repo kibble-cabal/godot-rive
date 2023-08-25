@@ -7,5 +7,13 @@ func _init() -> void:
 	date.period = "pm" if date.hour >= 12 and date.hour != 24 else "am"
 	date.hour = (date.hour - 12 if date.hour > 12 else date.hour)
 	date.minute = str(date.minute).pad_zeros(2)
-	print("{month}/{day}/{year}, {hour}:{minute}{period}".format(date))
+	print("{month}/{day}/{year}, {hour}:{minute}{period}\n---\n".format(date))
+
+
+func _ready() -> void:
+	var file: RiveFile = $RiveViewer.get_file()
+	prints("# Artboards:", file.get_artboard_count(), file.get_artboards())
+	
+	var artboard: RiveArtboard = file.get_artboard_by_index(0)
+	prints("# Scenes: ", artboard.get_scene_count(), artboard.get_scenes())
 	

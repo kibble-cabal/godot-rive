@@ -30,6 +30,7 @@
 #include <skia/renderer/include/skia_renderer.hpp>
 
 // extension
+#include "api/rive_file.hpp"
 #include "rive_controller.h"
 #include "utils/out_redirect.hpp"
 #include "utils/types.hpp"
@@ -99,17 +100,27 @@ class RiveViewer : public Control {
     void set_artboard(int value);
     void set_scene(int value);
 
-    String get_file_path() {
+    String get_file_path() const {
         return path;
     }
 
-    int get_fit() {
+    int get_fit() const {
         return fit;
     }
 
-    int get_alignment() {
+    int get_alignment() const {
         return alignment;
     }
+
+    /** API **/
+
+    float get_elapsed_time() const;
+    Ref<RiveFile> get_file() const;
+    Ref<RiveArtboard> get_artboard() const;
+    Ref<RiveScene> get_scene() const;
+
+    void go_to_artboard(Ref<RiveArtboard> artboard);
+    void go_to_scene(Ref<RiveScene> scene);
 };
 
 #endif

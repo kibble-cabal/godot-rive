@@ -14,6 +14,12 @@ func _ready() -> void:
 	var file: RiveFile = $RiveViewer.get_file()
 	prints("# Artboards:", file.get_artboard_count(), file.get_artboards())
 	
-	var artboard: RiveArtboard = file.get_artboard_by_index(0)
+	var artboard: RiveArtboard = $RiveViewer.get_artboard()
 	prints("# Scenes: ", artboard.get_scene_count(), artboard.get_scenes())
+	
+	await get_tree().create_timer(1.0).timeout
+	
+	var scene := artboard.get_scene_by_index(0)
+	scene.get_input_by_name("rating").set_value(2.0)
+	
 	

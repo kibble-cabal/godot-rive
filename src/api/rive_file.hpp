@@ -3,6 +3,7 @@
 
 // stdlib
 #include <string>
+#include <vector>
 
 // godot-cpp
 #include <godot_cpp/classes/ref.hpp>
@@ -26,8 +27,10 @@ class RiveFile : public Resource {
    private:
     rive::File *file;
     String path;
+    TypedArray<RiveArtboard> artboards;
 
     friend class RiveViewer;
+    friend class RiveController;
 
    protected:
     static void _bind_methods() {
@@ -39,12 +42,22 @@ class RiveFile : public Resource {
         ClassDB::bind_method(D_METHOD("get_artboard_by_name", "name"), &RiveFile::get_artboard_by_name);
     }
 
+    void cache_artboards() {
+        artboards.clear();
+        if (file) {
+            int size = file->artboardCount();
+            artboards.resize(size);
+            for (int i = 0; i < size; i++) artboards[i] = RiveArtboard::MakeRef(file, file->artboardAt(i).get(), i);
+        }
+    }
+
    public:
     static Ref<RiveFile> MakeRef(rive::File *file_value, String path_value) {
         if (!file_value) return nullptr;
         Ref<RiveFile> obj = memnew(RiveFile);
         obj->file = file_value;
         obj->path = path_value;
+        obj->cache_artboards();
         return obj;
     }
 
@@ -59,25 +72,24 @@ class RiveFile : public Resource {
     }
 
     TypedArray<RiveArtboard> get_artboards() const {
-        TypedArray<RiveArtboard> artboards;
-        for (int i = 0; i < file->artboardCount(); i++) {
-            artboards.push_back(RiveArtboard::MakeRef(file, file->artboardAt(i).get()));
-        }
         return artboards;
     }
 
     int get_artboard_count() const {
-        return file ? file->artboardCount() : -1;
+        return artboards.size();
     }
 
     Ref<RiveArtboard> get_artboard_by_index(int index) const {
-        if (file) return RiveArtboard::MakeRef(file, file->artboardAt(index).get());
+        if (index > 0 && artboards.size() > index) return artboards[index];
         return nullptr;
     }
 
     Ref<RiveArtboard> get_artboard_by_name(String name) const {
         std::string artboard_name = (char *)name.ptrw();
-        if (file) return RiveArtboard::MakeRef(file, file->artboardNamed(artboard_name).get());
+        for (int i = 0; i < get_artboard_count(); i++) {
+            Ref<RiveArtboard> artboard = artboards[i];
+            if (artboard->get_name() == name) return artboard;
+        }
         return nullptr;
     }
 

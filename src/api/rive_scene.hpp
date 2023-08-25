@@ -27,6 +27,8 @@ class RiveScene : public Resource {
    private:
     rive::ArtboardInstance *artboard;
     rive::StateMachineInstance *scene;
+    TypedArray<RiveInput> inputs;
+    int index = -1;
 
     friend class RiveArtboard;
 
@@ -43,12 +45,25 @@ class RiveScene : public Resource {
         ClassDB::bind_method(D_METHOD("get_input_by_index", "index"), &RiveScene::get_input_by_index);
     }
 
+    void cache_inputs() {
+        inputs.clear();
+        if (scene) {
+            int size = scene->inputCount();
+            inputs.resize(size);
+            for (int i = 0; i < size; i++) inputs[i] = RiveInput::MakeRef(scene->input(i), i);
+        }
+    }
+
    public:
-    static Ref<RiveScene> MakeRef(rive::ArtboardInstance *artboard_value, rive::StateMachineInstance *scene_value) {
+    static Ref<RiveScene> MakeRef(
+        rive::ArtboardInstance *artboard_value, rive::StateMachineInstance *scene_value, int index_value = -1
+    ) {
         if (!artboard_value || !scene_value) return nullptr;
         Ref<RiveScene> obj = memnew(RiveScene);
         obj->artboard = artboard_value;
         obj->scene = scene_value;
+        obj->index = index_value;
+        obj->cache_inputs();
         return obj;
     }
 
@@ -59,22 +74,15 @@ class RiveScene : public Resource {
     }
 
     int get_index() const {
-        if (artboard && scene)
-            for (int i = 0; i < artboard->stateMachineCount(); i++) {
-                auto curr_scene = artboard->stateMachineAt(i);
-                if (curr_scene && curr_scene.get() == scene) return i;
-            }
-        return -1;
+        return index;
     }
 
     String get_name() const {
-        int index = get_index();
-        if (index != -1) return artboard->stateMachineNameAt(index).c_str();
-        return String("-");
+        return scene ? scene->name().c_str() : "-";
     }
 
     int get_input_count() const {
-        return scene ? scene->inputCount() : -1;
+        return inputs.size();
     }
 
     Rect2 get_bounds() const {
@@ -91,16 +99,15 @@ class RiveScene : public Resource {
     }
 
     Ref<RiveInput> get_input_by_name(String name) const {
-        if (scene)
-            for (int i = 0; i < get_input_count(); i++) {
-                auto input = scene->input(i);
-                if (input->name().c_str() == name) return RiveInput::MakeRef(input, i);
-            }
+        for (int i = 0; i < get_input_count(); i++) {
+            Ref<RiveInput> input = inputs[i];
+            if (input->get_name() == name) return input;
+        }
         return nullptr;
     }
 
     Ref<RiveInput> get_input_by_index(int index) const {
-        if (scene && index != -1) RiveInput::MakeRef(scene->input(index), index);
+        if (index >= 0 && index < get_input_count()) return inputs[index];
         return nullptr;
     }
 

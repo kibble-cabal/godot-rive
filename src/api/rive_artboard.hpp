@@ -27,8 +27,11 @@ class RiveArtboard : public Resource {
    private:
     rive::File *file;
     rive::ArtboardInstance *artboard;
+    TypedArray<RiveScene> scenes;
+    int index = -1;
 
     friend class RiveFile;
+    friend class RiveController;
 
    protected:
     static void _bind_methods() {
@@ -43,12 +46,26 @@ class RiveArtboard : public Resource {
         ClassDB::bind_method(D_METHOD("get_world_transform"), &RiveArtboard::get_world_transform);
     }
 
+    void cache_scenes() {
+        scenes.clear();
+        if (artboard) {
+            int size = artboard->stateMachineCount();
+            scenes.resize(size);
+            for (int i = 0; i < size; i++)
+                scenes[i] = RiveScene::MakeRef(artboard, artboard->stateMachineAt(i).get(), i);
+        }
+    }
+
    public:
-    static Ref<RiveArtboard> MakeRef(rive::File *file_value, rive::ArtboardInstance *artboard_value) {
+    static Ref<RiveArtboard> MakeRef(
+        rive::File *file_value, rive::ArtboardInstance *artboard_value, int index_value = -1
+    ) {
         if (!file_value || !artboard_value) return nullptr;
         Ref<RiveArtboard> obj = memnew(RiveArtboard);
         obj->file = file_value;
         obj->artboard = artboard_value;
+        obj->index = index_value;
+        obj->cache_scenes();
         return obj;
     }
 
@@ -59,29 +76,18 @@ class RiveArtboard : public Resource {
     }
 
     int get_index() const {
-        if (file && artboard)
-            for (int i = 0; i < file->artboardCount(); i++) {
-                auto ab = file->artboardAt(i);
-                if (ab && ab.get() == artboard) return i;
-            }
-        return -1;
+        return index;
     }
 
     String get_name() const {
-        int index = get_index();
-        if (index != -1) return file->artboardNameAt(index).c_str();
-        return String("-");
+        return artboard ? artboard->name().c_str() : String();
     }
 
     int get_scene_count() const {
-        return artboard ? artboard->stateMachineCount() : -1;
+        return scenes.size();
     }
 
     TypedArray<RiveScene> get_scenes() const {
-        TypedArray<RiveScene> scenes;
-        for (int i = 0; i < artboard->stateMachineCount(); i++) {
-            scenes.push_back(RiveScene::MakeRef(artboard, artboard->stateMachineAt(i).get()));
-        }
         return scenes;
     }
 
@@ -104,13 +110,15 @@ class RiveArtboard : public Resource {
     }
 
     Ref<RiveScene> get_scene_by_index(int index) const {
-        if (artboard) return RiveScene::MakeRef(artboard, artboard->stateMachineAt(index).get());
+        if (index >= 0 && index < get_scene_count()) return scenes[index];
         return nullptr;
     }
 
     Ref<RiveScene> get_scene_by_name(String name) const {
-        std::string scene_name = (char *)name.ptrw();
-        if (artboard) return RiveScene::MakeRef(artboard, artboard->stateMachineNamed(scene_name).get());
+        for (int i = 0; i < get_scene_count(); i++) {
+            Ref<RiveScene> scene = scenes[i];
+            if (scene->get_name() == name) return scene;
+        }
         return nullptr;
     }
 

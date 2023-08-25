@@ -266,17 +266,17 @@ float RiveViewer::get_elapsed_time() const {
 }
 
 Ref<RiveFile> RiveViewer::get_file() const {
-    if (controller) return RiveFile::MakeRef(controller->file.get(), path);
+    if (controller) return controller->file_wrapper;
     return nullptr;
 }
 
 Ref<RiveArtboard> RiveViewer::get_artboard() const {
-    if (controller) return RiveArtboard::MakeRef(controller->file.get(), controller->artboard.get());
+    if (controller) return controller->artboard_wrapper;
     return nullptr;
 }
 
 Ref<RiveScene> RiveViewer::get_scene() const {
-    if (controller) return RiveScene::MakeRef(controller->artboard.get(), controller->scene.get());
+    if (controller) return controller->scene_wrapper;
     return nullptr;
 }
 

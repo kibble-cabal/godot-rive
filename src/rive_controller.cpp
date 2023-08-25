@@ -22,6 +22,7 @@ void RiveController::load() {
     factory = rivestd::make_unique<rive::SkiaFactory>();
     file = read_rive_file(path, factory.get());
     if (file != nullptr) {
+        file_wrapper = RiveFile::MakeRef(file.get(), path);
         resize(size.x, size.y);
         GDPRINT("Successfully imported <", path, ">!");
     }
@@ -87,11 +88,15 @@ void RiveController::pointer_move(rive::Vec2D position) {
 void RiveController::set_artboard(int index) {
     if (index > -1 && file && file->artboardCount() > index) artboard = file->artboardAt(index);
     else artboard = nullptr;
+    if (artboard && !file_wrapper.is_null())
+        artboard_wrapper = RiveArtboard::MakeRef(file_wrapper->file, artboard.get(), index);
 }
 
 void RiveController::set_scene(int index) {
     if (index > -1 && artboard && artboard->stateMachineCount() > index) scene = artboard->stateMachineAt(index);
     else scene = nullptr;
+    if (scene && !artboard_wrapper.is_null())
+        scene_wrapper = RiveScene::MakeRef(artboard_wrapper->artboard, scene.get(), index);
 }
 
 godot::PackedByteArray RiveController::byte_array() {

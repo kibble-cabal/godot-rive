@@ -84,7 +84,7 @@ class RiveInput : public Resource {
 
     void set_value(Variant value) {
         if (auto i = bool_input()) i->value((bool)value);
-        if (auto i = float_input()) i->value((float)value);
+        else if (auto i = float_input()) i->value((float)value);
     }
 
     bool is_bool() const {

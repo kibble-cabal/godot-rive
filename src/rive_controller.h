@@ -25,6 +25,7 @@
 #include <skia/renderer/include/skia_renderer.hpp>
 
 // Extension
+#include "api/rive_file.hpp"
 #include "utils/types.hpp"
 
 class RiveController {
@@ -40,12 +41,18 @@ class RiveController {
     friend class RiveViewer;
 
    private:
+    Ref<RiveFile> file_wrapper;
     Ptr<rive::File> file = nullptr;
+
+    Ref<RiveArtboard> artboard_wrapper;
+    Ptr<rive::ArtboardInstance> artboard = nullptr;
+
+    Ref<RiveScene> scene_wrapper;
+    Ptr<rive::StateMachineInstance> scene = nullptr;
+
     sk_sp<SkSurface> surface = nullptr;
     Ptr<rive::SkiaRenderer> renderer = nullptr;
     Ptr<rive::SkiaFactory> factory = nullptr;
-    Ptr<rive::ArtboardInstance> artboard = nullptr;
-    Ptr<rive::StateMachineInstance> scene = nullptr;
     rive::Mat2D inverse_transform;
 
    public:

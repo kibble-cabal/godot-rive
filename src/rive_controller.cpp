@@ -48,6 +48,7 @@ void RiveController::realign() {
         auto transform = rive::computeAlignment(fit, alignment, rive::AABB(0, 0, size.x, size.y), artboard->bounds());
         renderer->transform(transform);
         inverse_transform = transform.invertOrIdentity();
+        if (!artboard_wrapper.is_null()) artboard_wrapper->set_inverse_transform(inverse_transform);
     }
 }
 
@@ -88,15 +89,19 @@ void RiveController::pointer_move(rive::Vec2D position) {
 void RiveController::set_artboard(int index) {
     if (index > -1 && file && file->artboardCount() > index) artboard = file->artboardAt(index);
     else artboard = nullptr;
-    if (artboard && !file_wrapper.is_null())
+    if (artboard && !file_wrapper.is_null()) {
         artboard_wrapper = RiveArtboard::MakeRef(file_wrapper->file, artboard.get(), index);
+        if (!artboard_wrapper.is_null()) artboard_wrapper->set_inverse_transform(inverse_transform);
+    }
 }
 
 void RiveController::set_scene(int index) {
     if (index > -1 && artboard && artboard->stateMachineCount() > index) scene = artboard->stateMachineAt(index);
     else scene = nullptr;
-    if (scene && !artboard_wrapper.is_null())
+    if (scene && !artboard_wrapper.is_null()) {
         scene_wrapper = RiveScene::MakeRef(artboard_wrapper->artboard, scene.get(), index);
+        if (!scene_wrapper.is_null()) scene_wrapper->inverse_transform = inverse_transform;
+    }
 }
 
 godot::PackedByteArray RiveController::byte_array() {

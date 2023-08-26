@@ -17,12 +17,6 @@ func _ready() -> void:
 	var artboard: RiveArtboard = $RiveViewer.get_artboard()
 	prints("# Scenes: ", artboard.get_scene_count(), artboard.get_scenes())
 	
-	await get_tree().create_timer(1.0).timeout
-	
-	var scene := artboard.get_scene(0)
-	scene.find_input("rating").set_value(2.0)
-	
-	var animation := artboard.get_animation(0)
-	print(animation)
-	
+	var scene: RiveScene = $RiveViewer.get_scene()
+	prints(scene.get_listeners())
 	

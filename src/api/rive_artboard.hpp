@@ -30,6 +30,7 @@ class RiveArtboard : public Resource {
     rive::ArtboardInstance *artboard;
     TypedArray<RiveScene> scenes;
     TypedArray<RiveAnimation> animations;
+    rive::Mat2D inverse_transform;
     int index = -1;
 
     friend class RiveFile;
@@ -51,6 +52,14 @@ class RiveArtboard : public Resource {
         ClassDB::bind_method(D_METHOD("get_world_transform"), &RiveArtboard::get_world_transform);
     }
 
+    void set_inverse_transform(rive::Mat2D value) {
+        inverse_transform = value;
+        for (int i = 0; i < get_scene_count(); i++) {
+            Ref<RiveScene> scene = scenes[i];
+            scene->inverse_transform = value;
+        }
+    }
+
     void cache_scenes() {
         scenes.clear();
         if (artboard) {
@@ -59,6 +68,7 @@ class RiveArtboard : public Resource {
             for (int i = 0; i < size; i++)
                 scenes[i] = RiveScene::MakeRef(artboard, artboard->stateMachineAt(i).get(), i);
         }
+        set_inverse_transform(inverse_transform);
     }
 
     void cache_animations() {

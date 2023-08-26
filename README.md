@@ -41,7 +41,9 @@ It makes use of the following third-party libraries:
 - [x] Alignment & size exported properties
 - [x] Multiple scenes/artboards
 - [x] Dynamic exported properties based on state machine
-- [-] API for interaction during play (e.g. `set_scene_prop`, `reset_to_start`, etc.)
+- [x] API for interaction during runtime
+- [x] Add error handling
+- [ ] Add signals for event listeners (hover, pressed, etc)
 - [ ] Disable/enable event listeners (hover, pressed, etc) in API and editor
 - [ ] Optimization
 - [ ] Editor preview

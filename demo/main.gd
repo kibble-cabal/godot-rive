@@ -20,3 +20,5 @@ func _ready() -> void:
 	var scene: RiveScene = $RiveViewer.get_scene()
 	prints(scene.get_listeners())
 	
+	$RiveViewer.go_to_artboard(null)
+	

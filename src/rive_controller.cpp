@@ -29,11 +29,15 @@ void RiveController::load() {
 }
 
 void RiveController::start(int artboard_index, int scene_index, const godot::Dictionary &scene_properties) {
-    elapsed = 0;
-    set_artboard(artboard_index);
-    set_scene(scene_index);
-    set_scene_properties(scene_properties);
-    if (artboard_index == -1) GDERR("Started rive animation, but no artboard selected.");
+    try {
+        elapsed = 0;
+        set_artboard(artboard_index);
+        set_scene(scene_index);
+        set_scene_properties(scene_properties);
+        if (artboard_index == -1) throw RiveException("Started rive animation, but no artboard selected.").warning();
+    } catch (RiveException error) {
+        error.report();
+    }
 }
 
 void RiveController::resize(unsigned int width, unsigned int height) {

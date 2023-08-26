@@ -12,6 +12,7 @@
 #include <rive/animation/linear_animation_instance.hpp>
 
 // Extension
+#include "rive_exceptions.hpp"
 #include "utils/godot_macros.hpp"
 #include "utils/rive.hpp"
 #include "utils/types.hpp"
@@ -179,7 +180,6 @@ void RiveViewer::_on_path_changed() {
 void RiveViewer::_on_path_changed_in_editor() {
     notify_property_list_changed();
     set_artboard(-1);
-    set_scene(-1);
 }
 
 void RiveViewer::_get_property_list(List<PropertyInfo> *list) const {
@@ -199,8 +199,8 @@ void RiveViewer::_get_property_list(List<PropertyInfo> *list) const {
 
 void RiveViewer::set_file_path(String value) {
     path = value;
-    _on_path_changed();
     if (is_editor_hint()) _on_path_changed_in_editor();
+    _on_path_changed();
 }
 
 void RiveViewer::set_fit(int value) {
@@ -214,16 +214,20 @@ void RiveViewer::set_alignment(int value) {
 }
 
 void RiveViewer::set_artboard(int value) {
-    if (artboard != value) set_scene(-1);
-    artboard = value;
-    if (controller) controller->set_artboard(value);
-    notify_property_list_changed();
+    if (artboard != value) {
+        set_scene(-1);
+        artboard = value;
+        if (controller) controller->set_artboard(value);
+        notify_property_list_changed();
+    }
 }
 
 void RiveViewer::set_scene(int value) {
-    scene = value;
-    if (controller) controller->set_scene(value);
-    notify_property_list_changed();
+    if (scene != value) {
+        scene = value;
+        if (controller) controller->set_scene(value);
+        notify_property_list_changed();
+    }
 }
 
 bool RiveViewer::_set(const StringName &prop, const Variant &value) {
@@ -281,15 +285,23 @@ Ref<RiveScene> RiveViewer::get_scene() const {
 }
 
 void RiveViewer::go_to_artboard(Ref<RiveArtboard> artboard_value) {
-    if (artboard_value != nullptr && !artboard_value.is_null() && artboard_value->exists()) {
+    try {
+        if (artboard_value == nullptr || artboard_value.is_null() || !artboard_value->exists())
+            throw RiveException("Attempted to go to null artboard").from(this, "go_to_artboard").warning();
         set_artboard(artboard_value->get_index());
         if (controller && is_inside_tree()) controller->start(artboard, scene, scene_properties);
+    } catch (RiveException error) {
+        error.report();
     }
 }
 
 void RiveViewer::go_to_scene(Ref<RiveScene> scene_value) {
-    if (scene_value != nullptr && !scene_value.is_null() && scene_value->exists()) {
+    try {
+        if (scene_value == nullptr || scene_value.is_null() || !scene_value->exists())
+            throw RiveException("Attempted to go to null scene").from(this, "go_to_scene").warning();
         set_scene(scene_value->get_index());
         if (controller && is_inside_tree()) controller->start(artboard, scene, scene_properties);
+    } catch (RiveException error) {
+        error.report();
     }
 }

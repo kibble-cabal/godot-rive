@@ -12,16 +12,15 @@ func _init() -> void:
 
 func _ready() -> void:
 	var file: RiveFile = $RiveViewer.get_file()
-	prints("# Artboards:", file.get_artboard_count(), file.get_artboards())
+	if file: prints("# Artboards:", file.get_artboard_count(), file.get_artboards())
 	
 	var artboard: RiveArtboard = $RiveViewer.get_artboard()
-	prints("# Scenes: ", artboard.get_scene_count(), artboard.get_scenes())
+	if artboard: prints("# Scenes: ", artboard.get_scene_count(), artboard.get_scenes())
 	
 	var scene: RiveScene = $RiveViewer.get_scene()
-	prints(scene.get_listeners())
+	if scene: prints(scene.get_listeners())
 	
 	$RiveViewer.scene_property_changed.connect(_on_scene_property_changed)
-
 
 
 func _on_scene_property_changed(_scene: RiveScene, property: String, new_value, old_value) -> void:

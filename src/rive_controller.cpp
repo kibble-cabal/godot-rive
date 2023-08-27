@@ -41,6 +41,7 @@ void RiveController::start(int artboard_index, int scene_index, const godot::Dic
 }
 
 void RiveController::resize(unsigned int width, unsigned int height) {
+    if (!artboard_wrapper.is_null()) artboard_wrapper->queue_redraw();
     size = rive::Vec2D{ (float)width, (float)height };
     surface = SkSurface::MakeRaster(make_image_info());
     renderer = rivestd::make_unique<SkiaRenderer>(surface->getCanvas());

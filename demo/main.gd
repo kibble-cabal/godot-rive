@@ -1,6 +1,9 @@
 extends Control
 
 
+@onready var viewer1 = %RiveViewer1 as RiveViewer
+
+
 func _init() -> void:
 	# Print time for debugging
 	var date = Time.get_datetime_dict_from_system(false)
@@ -11,16 +14,16 @@ func _init() -> void:
 
 
 func _ready() -> void:
-	var file: RiveFile = $RiveViewer.get_file()
+	var file: RiveFile = viewer1.get_file()
 	if file: prints("# Artboards:", file.get_artboard_count(), file.get_artboards())
 	
-	var artboard: RiveArtboard = $RiveViewer.get_artboard()
+	var artboard: RiveArtboard = viewer1.get_artboard()
 	if artboard: prints("# Scenes: ", artboard.get_scene_count(), artboard.get_scenes())
 	
-	var scene: RiveScene = $RiveViewer.get_scene()
+	var scene: RiveScene = viewer1.get_scene()
 	if scene: prints(scene.get_listeners())
 	
-	$RiveViewer.scene_property_changed.connect(_on_scene_property_changed)
+	viewer1.scene_property_changed.connect(_on_scene_property_changed)
 
 
 func _on_scene_property_changed(_scene: RiveScene, property: String, new_value, old_value) -> void:

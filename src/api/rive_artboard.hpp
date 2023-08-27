@@ -50,6 +50,7 @@ class RiveArtboard : public Resource {
         ClassDB::bind_method(D_METHOD("find_scene", "name"), &RiveArtboard::find_scene);
         ClassDB::bind_method(D_METHOD("get_animation", "index"), &RiveArtboard::get_animation);
         ClassDB::bind_method(D_METHOD("get_world_transform"), &RiveArtboard::get_world_transform);
+        ClassDB::bind_method(D_METHOD("queue_redraw"), &RiveArtboard::queue_redraw);
     }
 
     void set_inverse_transform(rive::Mat2D value) {
@@ -159,6 +160,10 @@ class RiveArtboard : public Resource {
     Ref<RiveAnimation> get_animation(int index) const {
         if (index >= 0 && index < get_animation_count()) return animations[index];
         return nullptr;
+    }
+
+    void queue_redraw() {
+        if (artboard) artboard->addDirt(rive::ComponentDirt::Components, false);
     }
 
     String _to_string() const {

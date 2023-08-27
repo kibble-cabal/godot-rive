@@ -2,6 +2,7 @@ extends Control
 
 
 @onready var viewer1 = %RiveViewer1 as RiveViewer
+@onready var viewer4 = %RiveViewer4 as RiveViewer
 
 
 func _init() -> void:
@@ -22,6 +23,9 @@ func _ready() -> void:
 	
 	var scene: RiveScene = viewer1.get_scene()
 	if scene: prints(scene.get_listeners())
+	
+	var animation: RiveAnimation = viewer4.get_animation()
+	if animation: prints("Duration:", animation.get_duration(), "sec")
 	
 	viewer1.scene_property_changed.connect(_on_scene_property_changed)
 

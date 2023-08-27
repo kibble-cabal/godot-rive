@@ -50,6 +50,9 @@ class RiveController {
     Ref<RiveScene> scene_wrapper;
     Ptr<rive::StateMachineInstance> scene = nullptr;
 
+    Ref<RiveAnimation> animation_wrapper;
+    Ptr<rive::LinearAnimationInstance> animation = nullptr;
+
     sk_sp<SkSurface> surface = nullptr;
     Ptr<rive::SkiaRenderer> renderer = nullptr;
     Ptr<rive::SkiaFactory> factory = nullptr;
@@ -59,7 +62,7 @@ class RiveController {
     RiveController();
     RiveController(godot::String path_value);
     void load();
-    void start(int artboard_index, int scene_index, const godot::Dictionary &scene_properties);
+    void start(int artboard_index, int scene_index, int animation_index, const godot::Dictionary &scene_properties);
     void resize(unsigned int width, unsigned int height);
     void pointer_down(rive::Vec2D position);
     void pointer_up(rive::Vec2D position);
@@ -68,8 +71,10 @@ class RiveController {
     void realign(rive::Fit fit, rive::Alignment align);
     void set_artboard(int artboard_index);
     void set_scene(int scene_index);
+    void set_animation(int animation_index);
     godot::String get_artboard_property_hint();
-    godot::String get_scene_property_hint(int artboard_index);
+    godot::String get_scene_property_hint();
+    godot::String get_animation_property_hint();
     godot::PackedStringArray get_scene_property_names();
     void get_scene_property_list(godot::List<godot::PropertyInfo> *list);
     godot::PackedByteArray frame(float delta);

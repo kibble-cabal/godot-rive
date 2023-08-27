@@ -84,8 +84,10 @@ void RiveViewer::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_file"), &RiveViewer::get_file);
     ClassDB::bind_method(D_METHOD("get_artboard"), &RiveViewer::get_artboard);
     ClassDB::bind_method(D_METHOD("get_scene"), &RiveViewer::get_scene);
+    ClassDB::bind_method(D_METHOD("get_animation"), &RiveViewer::get_animation);
     ClassDB::bind_method(D_METHOD("go_to_artboard", "artboard"), &RiveViewer::go_to_artboard);
     ClassDB::bind_method(D_METHOD("go_to_scene", "scene"), &RiveViewer::go_to_scene);
+    ClassDB::bind_method(D_METHOD("go_to_animation", "animation"), &RiveViewer::go_to_animation);
 }
 
 void RiveViewer::_gui_input(const Ref<InputEvent> &event) {
@@ -139,7 +141,7 @@ void RiveViewer::_notification(int what) {
 void RiveViewer::_ready() {
     if (!is_editor_hint() && path.length() > 0) {
         _on_path_changed();
-        controller->start(artboard, scene, scene_properties);
+        controller->start(artboard, scene, animation, scene_properties);
         _on_resize();
     }
 }
@@ -225,8 +227,8 @@ void RiveViewer::_on_path_changed() {
 }
 
 void RiveViewer::_on_path_changed_in_editor() {
-    notify_property_list_changed();
     set_artboard(-1);
+    notify_property_list_changed();
 }
 
 void RiveViewer::_get_property_list(List<PropertyInfo> *list) const {
@@ -234,8 +236,15 @@ void RiveViewer::_get_property_list(List<PropertyInfo> *list) const {
         String artboard_hint = controller->get_artboard_property_hint();
         list->push_back(PropertyInfo(Variant::INT, "artboard", PROPERTY_HINT_ENUM, artboard_hint));
         if (artboard != -1) {
-            String scene_hint = controller->get_scene_property_hint(artboard);
+            String scene_hint = controller->get_scene_property_hint();
             list->push_back(PropertyInfo(Variant::INT, "scene", PROPERTY_HINT_ENUM, scene_hint));
+            list->push_back(PropertyInfo(
+                Variant::INT,
+                "animation",
+                PROPERTY_HINT_ENUM,
+                controller->get_animation_property_hint(),
+                (scene != -1) ? (PROPERTY_USAGE_DEFAULT & PROPERTY_USAGE_READ_ONLY) : PROPERTY_USAGE_DEFAULT
+            ));
         }
         if (scene != -1) {
             list->push_back(PropertyInfo(Variant::NIL, "Scene", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_CATEGORY));
@@ -262,6 +271,7 @@ void RiveViewer::set_alignment(int value) {
 
 void RiveViewer::set_artboard(int value) {
     if (artboard != value) {
+        set_animation(-1);
         set_scene(-1);
         artboard = value;
         if (controller) controller->set_artboard(value);
@@ -276,6 +286,21 @@ void RiveViewer::set_scene(int value) {
         scene_properties.clear();
         if (controller) controller->set_scene(value);
         notify_property_list_changed();
+    }
+}
+
+void RiveViewer::set_animation(int value) {
+    try {
+        if (animation != value) {
+            animation = value;
+            if (controller) controller->set_animation(value);
+            if (scene != -1)
+                throw RiveException("Animation will not play because a scene is selected.")
+                    .from(this, "set_animation")
+                    .warning();
+        }
+    } catch (RiveException error) {
+        error.report();
     }
 }
 
@@ -297,6 +322,10 @@ bool RiveViewer::_set(const StringName &prop, const Variant &value) {
         set_scene((int)value);
         return true;
     }
+    if (name == "animation") {
+        set_animation((int)value);
+        return true;
+    }
     if (controller && controller->get_scene_property_names().has(name)) {
         scene_properties[name] = value;
         return true;
@@ -312,6 +341,10 @@ bool RiveViewer::_get(const StringName &prop, Variant &return_value) const {
     }
     if (name == "scene") {
         return_value = scene;
+        return true;
+    }
+    if (name == "animation") {
+        return_value = animation;
         return true;
     }
     if (scene_properties.has(name)) {
@@ -341,12 +374,17 @@ Ref<RiveScene> RiveViewer::get_scene() const {
     return nullptr;
 }
 
+Ref<RiveAnimation> RiveViewer::get_animation() const {
+    if (controller) return controller->animation_wrapper;
+    return nullptr;
+}
+
 void RiveViewer::go_to_artboard(Ref<RiveArtboard> artboard_value) {
     try {
         if (is_null(artboard_value))
             throw RiveException("Attempted to go to null artboard").from(this, "go_to_artboard").warning();
         set_artboard(artboard_value->get_index());
-        if (controller && is_inside_tree()) controller->start(artboard, scene, scene_properties);
+        if (controller && is_inside_tree()) controller->start(artboard, scene, animation, scene_properties);
     } catch (RiveException error) {
         error.report();
     }
@@ -357,7 +395,22 @@ void RiveViewer::go_to_scene(Ref<RiveScene> scene_value) {
         if (is_null(scene_value))
             throw RiveException("Attempted to go to null scene").from(this, "go_to_scene").warning();
         set_scene(scene_value->get_index());
-        if (controller && is_inside_tree()) controller->start(artboard, scene, scene_properties);
+        if (controller && is_inside_tree()) controller->start(artboard, scene, animation, scene_properties);
+    } catch (RiveException error) {
+        error.report();
+    }
+}
+
+void RiveViewer::go_to_animation(Ref<RiveAnimation> animation_value) {
+    try {
+        if (is_null(animation_value))
+            throw RiveException("Attempted to go to null animation").from(this, "go_to_animation").warning();
+        set_animation(animation_value->get_index());
+        if (controller && is_inside_tree()) controller->start(artboard, scene, animation, scene_properties);
+        if (scene != -1)
+            throw RiveException("Went to animation, but it won't play because a scene is currently playing.")
+                .from(this, "go_to_animation")
+                .warning();
     } catch (RiveException error) {
         error.report();
     }

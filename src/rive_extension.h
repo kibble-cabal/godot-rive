@@ -70,6 +70,7 @@ class RiveViewer : public Control {
     Align alignment = Align::TOP_LEFT;
     int artboard = -1;
     int scene = -1;
+    int animation = -1;
     Dictionary scene_properties;
     Dictionary cached_scene_property_values;
     bool disable_press = false;
@@ -103,6 +104,7 @@ class RiveViewer : public Control {
     void set_alignment(int value);
     void set_artboard(int value);
     void set_scene(int value);
+    void set_animation(int value);
     void set_disable_press(bool value);
     void set_disable_hover(bool value);
 
@@ -140,9 +142,11 @@ class RiveViewer : public Control {
     Ref<RiveFile> get_file() const;
     Ref<RiveArtboard> get_artboard() const;
     Ref<RiveScene> get_scene() const;
+    Ref<RiveAnimation> get_animation() const;
 
     void go_to_artboard(Ref<RiveArtboard> artboard);
     void go_to_scene(Ref<RiveScene> scene);
+    void go_to_animation(Ref<RiveAnimation> animation);
 };
 
 #endif

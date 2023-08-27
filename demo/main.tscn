@@ -85,7 +85,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="RiveViewer6" type="RiveViewer" parent="GridContainer"]
-path = "res://examples/off_road_car.riv"
+path = "res://examples/juice.riv"
 artboard = 0
 scene = -1
 layout_mode = 2

@@ -163,7 +163,8 @@ class RiveArtboard : public Resource {
     }
 
     void queue_redraw() {
-        if (artboard) artboard->addDirt(rive::ComponentDirt::Components, false);
+        if (artboard && !artboard->hasDirt(rive::ComponentDirt::Components))
+            artboard->addDirt(rive::ComponentDirt::Components, false);
     }
 
     String _to_string() const {

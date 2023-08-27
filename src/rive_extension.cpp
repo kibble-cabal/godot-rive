@@ -109,17 +109,15 @@ void RiveViewer::_gui_input(const Ref<InputEvent> &event) {
 }
 
 void RiveViewer::_draw() {
-    if (!is_editor_hint() && texture != nullptr && !texture.is_null() && texture.is_valid()) {
+    if (!is_editor_hint() && !is_null(texture)) {
         draw_texture(texture, Vector2(0, 0));
     }
 }
 
 void RiveViewer::_process(float delta) {
     if (!is_editor_hint() && controller) {
-        if (image == nullptr || !image.is_valid() || image.is_null())
-            image = Image::create(width(), height(), false, IMAGE_FORMAT);
-        if (texture == nullptr || !texture.is_valid() || texture.is_null())
-            texture = ImageTexture::create_from_image(image);
+        if (is_null(image)) image = Image::create(width(), height(), false, IMAGE_FORMAT);
+        if (is_null(texture)) texture = ImageTexture::create_from_image(image);
 
         auto bytes = controller->frame(delta);
         if (bytes.size()) {
@@ -191,7 +189,7 @@ rive::Alignment RiveViewer::get_rive_alignment() {
 }
 
 void RiveViewer::check_scene_property_changed() {
-    if (controller && !controller->scene_wrapper.is_null()) {
+    if (controller && !is_null(controller->scene_wrapper)) {
         auto inputs = controller->scene_wrapper->get_inputs();
         for (int i = 0; i < inputs.size(); i++) {
             Ref<RiveInput> input = inputs[i];
@@ -345,7 +343,7 @@ Ref<RiveScene> RiveViewer::get_scene() const {
 
 void RiveViewer::go_to_artboard(Ref<RiveArtboard> artboard_value) {
     try {
-        if (artboard_value == nullptr || artboard_value.is_null() || !artboard_value->exists())
+        if (is_null(artboard_value))
             throw RiveException("Attempted to go to null artboard").from(this, "go_to_artboard").warning();
         set_artboard(artboard_value->get_index());
         if (controller && is_inside_tree()) controller->start(artboard, scene, scene_properties);
@@ -356,7 +354,7 @@ void RiveViewer::go_to_artboard(Ref<RiveArtboard> artboard_value) {
 
 void RiveViewer::go_to_scene(Ref<RiveScene> scene_value) {
     try {
-        if (scene_value == nullptr || scene_value.is_null() || !scene_value->exists())
+        if (is_null(scene_value))
             throw RiveException("Attempted to go to null scene").from(this, "go_to_scene").warning();
         set_scene(scene_value->get_index());
         if (controller && is_inside_tree()) controller->start(artboard, scene, scene_properties);

@@ -6,7 +6,6 @@
 #include <rive/animation/state_machine_number.hpp>
 
 #include "utils/read_rive_file.hpp"
-#include "utils/types.hpp"
 
 RiveController::RiveController() {}
 
@@ -41,10 +40,10 @@ void RiveController::start(int artboard_index, int scene_index, const godot::Dic
 }
 
 void RiveController::resize(unsigned int width, unsigned int height) {
-    if (!artboard_wrapper.is_null()) artboard_wrapper->queue_redraw();
     size = rive::Vec2D{ (float)width, (float)height };
     surface = SkSurface::MakeRaster(make_image_info());
     renderer = rivestd::make_unique<SkiaRenderer>(surface->getCanvas());
+    if (!is_null(artboard_wrapper)) artboard_wrapper->queue_redraw();
     realign();
 }
 
@@ -53,7 +52,7 @@ void RiveController::realign() {
         auto transform = rive::computeAlignment(fit, alignment, rive::AABB(0, 0, size.x, size.y), artboard->bounds());
         renderer->transform(transform);
         inverse_transform = transform.invertOrIdentity();
-        if (!artboard_wrapper.is_null()) artboard_wrapper->set_inverse_transform(inverse_transform);
+        if (!is_null(artboard_wrapper)) artboard_wrapper->set_inverse_transform(inverse_transform);
     }
 }
 
@@ -92,20 +91,32 @@ void RiveController::pointer_move(rive::Vec2D position) {
 }
 
 void RiveController::set_artboard(int index) {
+    // Delete old scene reference
+    if (!is_null(scene_wrapper)) unref(scene_wrapper);
+    if (scene) scene.release();
+
+    // Delete old artboard reference
+    if (!is_null(artboard_wrapper)) unref(artboard_wrapper);
+    if (artboard) artboard.release();
+
+    // Make new artboard reference
     if (index > -1 && file && file->artboardCount() > index) artboard = file->artboardAt(index);
-    else artboard = nullptr;
-    if (artboard && !file_wrapper.is_null()) {
+    if (artboard && !is_null(file_wrapper)) {
         artboard_wrapper = RiveArtboard::MakeRef(file_wrapper->file, artboard.get(), index);
-        if (!artboard_wrapper.is_null()) artboard_wrapper->set_inverse_transform(inverse_transform);
+        if (!is_null(artboard_wrapper)) artboard_wrapper->set_inverse_transform(inverse_transform);
     }
 }
 
 void RiveController::set_scene(int index) {
+    // Delete old scene reference
+    if (!is_null(scene_wrapper)) unref(scene_wrapper);
+    if (scene) scene.release();
+
+    // Make new scene reference
     if (index > -1 && artboard && artboard->stateMachineCount() > index) scene = artboard->stateMachineAt(index);
-    else scene = nullptr;
-    if (scene && !artboard_wrapper.is_null()) {
+    if (scene && !is_null(artboard_wrapper)) {
         scene_wrapper = RiveScene::MakeRef(artboard_wrapper->artboard, scene.get(), index);
-        if (!scene_wrapper.is_null()) scene_wrapper->inverse_transform = inverse_transform;
+        if (!is_null(scene_wrapper)) scene_wrapper->inverse_transform = inverse_transform;
     }
 }
 

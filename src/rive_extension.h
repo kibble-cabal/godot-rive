@@ -61,8 +61,8 @@ class RiveViewer : public Control {
     };
 
     Ptr<RiveController> controller = rivestd::make_unique<RiveController>();
-    Ref<Image> image = nullptr;
-    Ref<ImageTexture> texture = nullptr;
+    Ref<Image> image;
+    Ref<ImageTexture> texture;
 
    private:
     String path;

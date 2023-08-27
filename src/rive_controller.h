@@ -26,7 +26,7 @@
 
 // Extension
 #include "api/rive_file.hpp"
-#include "utils/types.hpp"
+#include "utils/memory.hpp"
 
 class RiveController {
    public:

@@ -20,9 +20,9 @@ func _ready() -> void:
 	var scene: RiveScene = $RiveViewer.get_scene()
 	prints(scene.get_listeners())
 	
-	
 	$RiveViewer.scene_property_changed.connect(_on_scene_property_changed)
-	
+
+
 
 func _on_scene_property_changed(_scene: RiveScene, property: String, new_value, old_value) -> void:
 	print("Property {prop} changed! {old} -> {new}".format({

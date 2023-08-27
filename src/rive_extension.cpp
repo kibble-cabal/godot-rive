@@ -51,6 +51,23 @@ void RiveViewer::_bind_methods() {
         "get_alignment"
     );
 
+    ClassDB::bind_method(D_METHOD("get_disable_press"), &RiveViewer::get_disable_press);
+    ClassDB::bind_method(D_METHOD("set_disable_press", "value"), &RiveViewer::set_disable_press);
+    ClassDB::add_property(
+        get_class_static(),
+        PropertyInfo(Variant::BOOL, "disable_press"),
+        "set_disable_press",
+        "get_disable_press"
+    );
+    ClassDB::bind_method(D_METHOD("get_disable_hover"), &RiveViewer::get_disable_hover);
+    ClassDB::bind_method(D_METHOD("set_disable_hover", "value"), &RiveViewer::set_disable_hover);
+    ClassDB::add_property(
+        get_class_static(),
+        PropertyInfo(Variant::BOOL, "disable_hover"),
+        "set_disable_hover",
+        "get_disable_hover"
+    );
+
     /* Signals */
     ADD_SIGNAL(MethodInfo("pressed", PropertyInfo(Variant::VECTOR2, "position")));
     ADD_SIGNAL(MethodInfo("released", PropertyInfo(Variant::VECTOR2, "position")));
@@ -78,16 +95,16 @@ void RiveViewer::_gui_input(const Ref<InputEvent> &event) {
     rive::Vec2D pos = rive::Vec2D(mouse_event->get_position().x, mouse_event->get_position().y);
 
     if (auto mouse_button = dynamic_cast<InputEventMouseButton *>(event.ptr())) {
-        if (mouse_button->is_pressed()) {
+        if (!disable_press && mouse_button->is_pressed()) {
             controller->pointer_down(pos);
             emit_signal("pressed", mouse_event->get_position());
-        } else if (mouse_button->is_released()) {
+        } else if (!disable_press && mouse_button->is_released()) {
             controller->pointer_up(pos);
             emit_signal("released", mouse_event->get_position());
         }
     }
     if (auto mouse_motion = dynamic_cast<InputEventMouseMotion *>(event.ptr())) {
-        controller->pointer_move(pos);
+        if (!disable_hover) controller->pointer_move(pos);
     }
 }
 
@@ -262,6 +279,14 @@ void RiveViewer::set_scene(int value) {
         if (controller) controller->set_scene(value);
         notify_property_list_changed();
     }
+}
+
+void RiveViewer::set_disable_press(bool value) {
+    disable_press = value;
+}
+
+void RiveViewer::set_disable_hover(bool value) {
+    disable_hover = value;
 }
 
 bool RiveViewer::_set(const StringName &prop, const Variant &value) {

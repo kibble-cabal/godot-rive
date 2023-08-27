@@ -10,7 +10,7 @@ It makes use of the following third-party libraries:
 - [`rive-cpp`](https://github.com/rive-app/rive-cpp)
 - [`skia`](https://github.com/google/skia) (included in `rive-cpp`)
 
-## Building & installation
+## Building
 
 > :warning: These instructions may be incomplete. They are only tested on MacOS.
 
@@ -25,13 +25,20 @@ It makes use of the following third-party libraries:
 2. Copy the file `SConstruct_skia` into `thirdparty/rive-cpp/skia`
 3. Inside `thirdparty/rive-cpp/skia`, run `scons` (or `scons --help` to see full list of options)
 
-### 3. Build godot-rive
+### 3. Build godot-cpp
 1. Update the submodule (`git submodule update godot-cpp`)
 
 ### 4. Build the extension
 1. Install scons, if not already installed
 2. Inside the root directory, run `scons` (or `scons --help` to see full list of options)
-3. You may be required to add the generated lib binary files from `rive-cpp` to Godot's contents directory. Open up the demo project and look at the output to see you get an error - if so, on MacOS, you would copy `demo/bin/rive/librive.dylib` into the directory `Godot.app/Contents/MacOS`.
+
+
+## Installation
+
+> :warning: If you are not on M1 MacOS, you will need to build the extension yourself.
+
+1. Create a folder in your project called `bin`, and copy the contents of `demo/bin` into the new folder
+2. Update the paths in `rive.gdextension` to match your project folder structure
 
 ## Roadmap
 - [x] Load `.riv` files
@@ -44,7 +51,7 @@ It makes use of the following third-party libraries:
 - [x] API for interaction during runtime
 - [x] Add error handling
 - [x] Add signals for event listeners (hover, pressed, etc)
-- [ ] Disable/enable event listeners (hover, pressed, etc) in API and editor
+- [x] Disable/enable event listeners (hover, pressed, etc) in API and editor
 - [ ] Optimization
 - [ ] Editor preview
 - [ ] Windows/Linux support

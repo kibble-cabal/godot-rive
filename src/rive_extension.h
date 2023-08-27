@@ -72,6 +72,8 @@ class RiveViewer : public Control {
     int scene = -1;
     Dictionary scene_properties;
     Dictionary cached_scene_property_values;
+    bool disable_press = false;
+    bool disable_hover = false;
 
    protected:
     static void _bind_methods();
@@ -101,6 +103,8 @@ class RiveViewer : public Control {
     void set_alignment(int value);
     void set_artboard(int value);
     void set_scene(int value);
+    void set_disable_press(bool value);
+    void set_disable_hover(bool value);
 
     String get_file_path() const {
         return path;
@@ -112,6 +116,14 @@ class RiveViewer : public Control {
 
     int get_alignment() const {
         return alignment;
+    }
+
+    bool get_disable_press() const {
+        return disable_press;
+    }
+
+    bool get_disable_hover() const {
+        return disable_hover;
     }
 
     /* Signals */

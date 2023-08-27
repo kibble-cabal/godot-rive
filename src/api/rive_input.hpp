@@ -35,6 +35,7 @@ class RiveInput : public Resource {
         ClassDB::bind_method(D_METHOD("get_index"), &RiveInput::get_index);
         ClassDB::bind_method(D_METHOD("get_value"), &RiveInput::get_value);
         ClassDB::bind_method(D_METHOD("set_value", "value"), &RiveInput::set_value);
+        ClassDB::bind_method(D_METHOD("get_default"), &RiveInput::get_default);
         ClassDB::bind_method(D_METHOD("is_bool"), &RiveInput::is_bool);
         ClassDB::bind_method(D_METHOD("is_number"), &RiveInput::is_number);
     }
@@ -82,6 +83,12 @@ class RiveInput : public Resource {
         return nullptr;
     }
 
+    Variant get_default() const {
+        if (is_bool()) return false;
+        if (is_number()) return 0.0;
+        return nullptr;
+    }
+
     void set_value(Variant value) {
         if (auto i = bool_input()) i->value((bool)value);
         else if (auto i = float_input()) i->value((float)value);
@@ -95,6 +102,8 @@ class RiveInput : public Resource {
         return get_type() == Variant::Type::FLOAT;
     }
 
+    /* Overrides */
+
     String _to_string() const {
         Dictionary format_args;
         format_args["cls"] = get_class_static();
@@ -102,6 +111,8 @@ class RiveInput : public Resource {
         format_args["type"] = get_type() == Variant::Type::BOOL ? "bool" : "float";
         return String("{cls}({type} {name})").format(format_args);
     }
+
+    /* Operators */
 
     bool operator==(const RiveInput &other) const {
         return other.input == input;

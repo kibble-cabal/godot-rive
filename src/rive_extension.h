@@ -71,6 +71,7 @@ class RiveViewer : public Control {
     int artboard = -1;
     int scene = -1;
     Dictionary scene_properties;
+    Dictionary cached_scene_property_values;
 
    protected:
     static void _bind_methods();
@@ -80,6 +81,7 @@ class RiveViewer : public Control {
 
     rive::Fit get_rive_fit();
     rive::Alignment get_rive_alignment();
+    void check_scene_property_changed();
 
    public:
     void _draw() override;
@@ -112,7 +114,15 @@ class RiveViewer : public Control {
         return alignment;
     }
 
-    /** API **/
+    /* Signals */
+
+    void pressed(Vector2 position) const {}
+
+    void released(Vector2 position) const {}
+
+    void scene_property_changed(Ref<RiveScene> scene, String property, Variant new_value, Variant old_value) const {}
+
+    /* API */
 
     float get_elapsed_time() const;
     Ref<RiveFile> get_file() const;

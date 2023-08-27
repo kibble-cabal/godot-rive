@@ -43,7 +43,7 @@ It makes use of the following third-party libraries:
 - [x] Dynamic exported properties based on state machine
 - [x] API for interaction during runtime
 - [x] Add error handling
-- [ ] Add signals for event listeners (hover, pressed, etc)
+- [x] Add signals for event listeners (hover, pressed, etc)
 - [ ] Disable/enable event listeners (hover, pressed, etc) in API and editor
 - [ ] Optimization
 - [ ] Editor preview

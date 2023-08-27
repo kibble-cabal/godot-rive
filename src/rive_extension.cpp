@@ -51,6 +51,17 @@ void RiveViewer::_bind_methods() {
         "get_alignment"
     );
 
+    /* Signals */
+    ADD_SIGNAL(MethodInfo("pressed", PropertyInfo(Variant::VECTOR2, "position")));
+    ADD_SIGNAL(MethodInfo("released", PropertyInfo(Variant::VECTOR2, "position")));
+    ADD_SIGNAL(MethodInfo(
+        "scene_property_changed",
+        PropertyInfo(Variant::OBJECT, "scene"),
+        PropertyInfo(Variant::STRING, "property"),
+        PropertyInfo(Variant::VARIANT_MAX, "new_value"),
+        PropertyInfo(Variant::VARIANT_MAX, "old_value")
+    ));
+
     /* API methods */
     ClassDB::bind_method(D_METHOD("get_elapsed_time"), &RiveViewer::get_elapsed_time);
     ClassDB::bind_method(D_METHOD("get_file"), &RiveViewer::get_file);
@@ -67,8 +78,13 @@ void RiveViewer::_gui_input(const Ref<InputEvent> &event) {
     rive::Vec2D pos = rive::Vec2D(mouse_event->get_position().x, mouse_event->get_position().y);
 
     if (auto mouse_button = dynamic_cast<InputEventMouseButton *>(event.ptr())) {
-        if (mouse_button->is_pressed()) controller->pointer_down(pos);
-        else if (mouse_button->is_released()) controller->pointer_up(pos);
+        if (mouse_button->is_pressed()) {
+            controller->pointer_down(pos);
+            emit_signal("pressed", mouse_event->get_position());
+        } else if (mouse_button->is_released()) {
+            controller->pointer_up(pos);
+            emit_signal("released", mouse_event->get_position());
+        }
     }
     if (auto mouse_motion = dynamic_cast<InputEventMouseMotion *>(event.ptr())) {
         controller->pointer_move(pos);
@@ -94,6 +110,7 @@ void RiveViewer::_process(float delta) {
             texture->update(image);
             queue_redraw();
         }
+        check_scene_property_changed();
     }
 }
 
@@ -153,6 +170,21 @@ rive::Alignment RiveViewer::get_rive_alignment() {
         case Align::TOP_LEFT:
         default:
             return rive::Alignment::topLeft;
+    }
+}
+
+void RiveViewer::check_scene_property_changed() {
+    if (controller && !controller->scene_wrapper.is_null()) {
+        auto inputs = controller->scene_wrapper->get_inputs();
+        for (int i = 0; i < inputs.size(); i++) {
+            Ref<RiveInput> input = inputs[i];
+            String prop = input->get_name();
+            Variant old_value = cached_scene_property_values.get(prop, input->get_default());
+            Variant new_value = input->get_value();
+            if (old_value != new_value)
+                emit_signal("scene_property_changed", controller->scene_wrapper, prop, new_value, old_value);
+            cached_scene_property_values[prop] = new_value;
+        }
     }
 }
 
@@ -225,6 +257,8 @@ void RiveViewer::set_artboard(int value) {
 void RiveViewer::set_scene(int value) {
     if (scene != value) {
         scene = value;
+        cached_scene_property_values.clear();
+        scene_properties.clear();
         if (controller) controller->set_scene(value);
         notify_property_list_changed();
     }

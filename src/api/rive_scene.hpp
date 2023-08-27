@@ -186,12 +186,16 @@ class RiveScene : public Resource {
         if (scene) scene->pointerUp(inverse_transform * rive::Vec2D(position.x, position.y));
     }
 
+    /* Overrides */
+
     String _to_string() const {
         Dictionary format_args;
         format_args["cls"] = get_class_static();
         format_args["name"] = get_name();
         return String("{cls}({name})").format(format_args);
     }
+
+    /* Operators */
 
     bool operator==(const RiveScene &other) const {
         return other.scene == scene;

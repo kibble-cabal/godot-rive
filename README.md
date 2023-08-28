@@ -12,26 +12,22 @@ It makes use of the following third-party libraries:
 
 ## Building
 
-> :warning: These instructions may be incomplete. They are only tested on MacOS.
+> :warning: These instructions may be incomplete. They are only tested on MacOS.  You may have to modify `build.sh`, `build_skia.sh`, and `build_rive.sh` for your system.
 
-### 1. Build rive-cpp
-1. Install scons, if not already installed
-2. Update the submodule (`git submodule update thirdparty/rive-cpp`)
-3. Copy the file `SConstruct_rive` into `thirdparty/rive-cpp`
-4. Inside `thirdparty/rive-cpp`, run `scons` (run `scons --help` to see full list of options)
+The following must be installed:
+- [git](https://git-scm.com/)
+- [scons](https://scons.org/)
+- [ninja](https://ninja-build.org/)
 
-### 2. Build skia
-1. Inside `thirdparty/rive-cpp/skia/dependencies`, run `sh make_dependencies.sh`
-2. Copy the file `SConstruct_skia` into `thirdparty/rive-cpp/skia`
-3. Inside `thirdparty/rive-cpp/skia`, run `scons` (or `scons --help` to see full list of options)
+To build, run the following command (from the root directory):
+```bash
+sh build.sh
+```
 
-### 3. Build godot-cpp
-1. Update the submodule (`git submodule update godot-cpp`)
-
-### 4. Build the extension
-1. Install scons, if not already installed
-2. Inside the root directory, run `scons` (or `scons --help` to see full list of options)
-
+For more information, run:
+```bash
+sh build.sh --help
+```
 
 ## Installation
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from os.path import join
+from os.path import join, exists
 
 SConscript("SConscript.common")
 env = SConscript("../godot-cpp/SConstruct")
@@ -21,9 +21,39 @@ env.Prepend(
 )
 
 # Add rive library
+
+
+def GetRiveBin(path: str) -> str:
+    return File(
+        join(
+            "../thirdparty/rive-cpp",
+            path.format(
+                platform=RIVE_PLATFORM_MAP[env["platform"]],
+                target=RIVE_TARGET_MAP[env["target"]],
+                suffix=env["LIBSUFFIX"],
+            ),
+        )
+    )
+
+
+RIVE_PLATFORM_MAP = {"macos": "macosx", "windows": "windows"}
+
+RIVE_TARGET_MAP = {"template_debug": "debug", "template_release": "release"}
+
 RIVE_SRC_DIR = "../thirdparty/rive-cpp/"
 env.Prepend(
-    LIBS=[File(join("../demo/bin/rive", env.GetLibBinFile("rive")))],
+    LIBS=[
+        GetRiveBin("build/{platform}/bin/{target}/librive{suffix}"),
+        GetRiveBin(
+            "skia/renderer/build/{platform}/bin/{target}/librive_skia_renderer{suffix}"
+        ),
+        GetRiveBin(
+            "dependencies/{platform}/cache/bin/{target}/librive_harfbuzz{suffix}"
+        ),
+        GetRiveBin(
+            "dependencies/{platform}/cache/bin/{target}/librive_sheenbidi{suffix}"
+        ),
+    ],
     CPPPATH=[
         RIVE_SRC_DIR,
         join(RIVE_SRC_DIR, "include"),
@@ -33,6 +63,8 @@ env.Prepend(
         join(RIVE_SRC_DIR, "skia/renderer/src"),
     ],
 )
+
+# sources += env.GlobRecursive(join(RIVE_SRC_DIR, "skia/renderer/src"), "*.cpp")
 
 # Add source files
 env.Append(CPPPATH=["../src/"])

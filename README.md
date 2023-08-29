@@ -12,9 +12,10 @@ It makes use of the following third-party libraries:
 
 ## Building
 
-> :warning: These instructions may be incomplete. They are only tested on MacOS.  You may have to modify `build.sh`, `build_skia.sh`, and `build_rive.sh` for your system.
+> :warning: These instructions may be incomplete. They are only tested on MacOS.  You may have to modify `build/build.py` or `build/SConstruct` for your system.
 
 The following must be installed:
+- Python
 - [git](https://git-scm.com/)
 - [scons](https://scons.org/)
 - [ninja](https://ninja-build.org/)
@@ -22,12 +23,12 @@ The following must be installed:
 To build, run the following commands (from the root directory):
 ```bash
 cd build
-sh build.sh
+python build.py
 ```
 
-For more information, run:
+To see the available options, run:
 ```bash
-sh build.sh --help
+python build.py --help
 ```
 
 ## Installation

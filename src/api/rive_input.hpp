@@ -41,11 +41,13 @@ class RiveInput : public Resource {
     }
 
     rive::SMIBool *bool_input() const {
-        return dynamic_cast<rive::SMIBool *>(input);
+        if (is_bool()) return (rive::SMIBool *)input;
+        return nullptr;
     }
 
     rive::SMINumber *float_input() const {
-        return dynamic_cast<rive::SMINumber *>(input);
+        if (is_number()) return (rive::SMINumber *)input;
+        return nullptr;
     }
 
    public:

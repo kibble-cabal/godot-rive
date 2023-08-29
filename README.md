@@ -19,8 +19,9 @@ The following must be installed:
 - [scons](https://scons.org/)
 - [ninja](https://ninja-build.org/)
 
-To build, run the following command (from the root directory):
+To build, run the following commands (from the root directory):
 ```bash
+cd build
 sh build.sh
 ```
 

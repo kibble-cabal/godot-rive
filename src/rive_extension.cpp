@@ -4,6 +4,8 @@
 
 // Godot
 #include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/rendering_device.hpp>
+#include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/core/binder_common.hpp>
 #include <godot_cpp/core/class_db.hpp>
 
@@ -215,6 +217,8 @@ int RiveViewer::height() {
 
 void RiveViewer::_on_resize() {
     if (controller) controller->resize(width(), height());
+    if (!is_null(image)) unref(image);
+    if (!is_null(texture)) unref(texture);
     image = Image::create(width(), height(), false, IMAGE_FORMAT);
     texture = ImageTexture::create_from_image(image);
 }

@@ -103,5 +103,9 @@
         "utility": "cpp",
         "*.def": "cpp",
         "*.gen": "cpp"
-    }
+    },
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    },
+    "python.formatting.provider": "none"
 }

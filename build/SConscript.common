@@ -1,0 +1,40 @@
+#!/usr/bin/env python
+
+
+def GlobRecursive(_self, root_path, pattern):
+    result_nodes = []
+    paths = [root_path]
+    while paths:
+        path = paths.pop()
+        all_nodes = Glob(f"{path}/*")
+        # `srcnode()` must be used because `isdir()` doesn't work for entries in variant dirs which haven't been copied yet.
+        paths.extend(
+            entry
+            for entry in all_nodes
+            if entry.isdir() or (entry.srcnode() and entry.srcnode().isdir())
+        )
+        result_nodes.extend(Glob(f"{path}/{pattern}"))
+    return sorted(result_nodes)
+
+
+def GetLibBinName(self, base_name: str) -> str:
+    return "{platform}/{arch}/{target}/{base_name}".format(base_name=base_name, **self)
+
+
+def GetLibBinFile(self, base_name: str) -> str:
+    path = self.GetLibBinName(base_name).split("/")
+    path.pop()
+    directory: str = "/".join(path)
+    if self["platform"] == "macos":
+        return "{directory}/lib{base_name}{SHLIBSUFFIX}".format(
+            directory=directory, base_name=base_name, **self
+        )
+    else:
+        return "{directory}/lib{base_name}{suffix}{SHLIBSUFFIX}".format(
+            directory=directory, base_name=base_name, **self
+        )
+
+
+AddMethod(Environment, GlobRecursive)
+AddMethod(Environment, GetLibBinName)
+AddMethod(Environment, GetLibBinFile)

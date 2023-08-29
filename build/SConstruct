@@ -1,0 +1,54 @@
+#!/usr/bin/env python
+from os.path import join
+
+SConscript("SConscript.common")
+env = SConscript("../godot-cpp/SConstruct")
+
+env["STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME"] = True
+
+sources = []
+
+# Add skia library
+SKIA_SRC_DIR = "../thirdparty/rive-cpp/skia/dependencies/skia"
+env.Prepend(
+    LIBS=["skia"],
+    LIBPATH=[join(SKIA_SRC_DIR, "out/static")],
+    CPPPATH=[
+        SKIA_SRC_DIR,
+        join(SKIA_SRC_DIR, "include"),
+        join(SKIA_SRC_DIR, "src"),
+    ],
+)
+
+# Add rive library
+RIVE_SRC_DIR = "../thirdparty/rive-cpp/"
+env.Prepend(
+    LIBS=[File(join("../demo/bin/rive", env.GetLibBinFile("rive")))],
+    CPPPATH=[
+        RIVE_SRC_DIR,
+        join(RIVE_SRC_DIR, "include"),
+        join(RIVE_SRC_DIR, "src"),
+        join(RIVE_SRC_DIR, "skia/renderer"),
+        join(RIVE_SRC_DIR, "skia/renderer/include"),
+        join(RIVE_SRC_DIR, "skia/renderer/src"),
+    ],
+)
+
+# Add source files
+env.Append(CPPPATH=["../src/"])
+sources += env.GlobRecursive("../src", "*.cpp")
+
+if env["platform"] == "macos":
+    library = env.SharedLibrary(
+        "../demo/bin/librive.{}.{}.framework/librive.{}.{}".format(
+            env["platform"], env["target"], env["platform"], env["target"]
+        ),
+        source=sources,
+    )
+else:
+    library = env.SharedLibrary(
+        "../demo/bin/librive{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
+        source=sources,
+    )
+
+Default(library)

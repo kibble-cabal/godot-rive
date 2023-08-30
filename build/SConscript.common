@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+from os import getcwd
+from os.path import exists
+
+BOLD = "\033[01m"
+RED = "\033[31m"
+RESET = "\033[0m"
 
 
 def GlobRecursive(_self, root_path, pattern):
@@ -35,6 +41,20 @@ def GetLibBinFile(self, base_name: str) -> str:
         )
 
 
+def FailBuild(self, reason: str, detail: str):
+    print(f"\n{RED}{BOLD}Build failed.{RESET}")
+    print(f"{RED}[{reason}]{RESET} {detail}")
+    Exit()
+
+
+def RequireFile(self, file):
+    if not exists(file.get_path()):
+        base_path = getcwd().removesuffix("/build")
+        self.FailBuild("Missing dependency", file.get_path().replace(base_path, ""))
+
+
 AddMethod(Environment, GlobRecursive)
 AddMethod(Environment, GetLibBinName)
 AddMethod(Environment, GetLibBinFile)
+AddMethod(Environment, FailBuild)
+AddMethod(Environment, RequireFile)

@@ -1,5 +1,27 @@
 #!/usr/bin/env python
-from os.path import join, exists
+from os.path import join
+
+
+def GetRiveBin(path: str) -> str:
+    platform_map = {
+        "macos": "macosx",
+        "windows": "windows",
+    }
+    target_map = {
+        "template_debug": "debug",
+        "template_release": "release",
+    }
+    return File(
+        join(
+            "../thirdparty/rive-cpp",
+            path.format(
+                platform=platform_map.get(env["platform"], env["platform"]),
+                target=target_map.get(env["target"], env["target"]),
+                suffix=env.get("LIBSUFFIX", ".a"),
+            ),
+        )
+    )
+
 
 SConscript("SConscript.common")
 env = SConscript("../godot-cpp/SConstruct")
@@ -10,6 +32,7 @@ sources = []
 
 # Add skia library
 SKIA_SRC_DIR = "../thirdparty/rive-cpp/skia/dependencies/skia"
+env.RequireFile(Dir(SKIA_SRC_DIR))
 env.Prepend(
     LIBS=["skia"],
     LIBPATH=[join(SKIA_SRC_DIR, "out/static")],
@@ -22,38 +45,21 @@ env.Prepend(
 
 # Add rive library
 
+rive_bins = [
+    GetRiveBin("build/{platform}/bin/{target}/librive{suffix}"),
+    GetRiveBin(
+        "skia/renderer/build/{platform}/bin/{target}/librive_skia_renderer{suffix}"
+    ),
+    GetRiveBin("dependencies/{platform}/cache/bin/{target}/librive_harfbuzz{suffix}"),
+    GetRiveBin("dependencies/{platform}/cache/bin/{target}/librive_sheenbidi{suffix}"),
+]
 
-def GetRiveBin(path: str) -> str:
-    return File(
-        join(
-            "../thirdparty/rive-cpp",
-            path.format(
-                platform=RIVE_PLATFORM_MAP[env["platform"]],
-                target=RIVE_TARGET_MAP[env["target"]],
-                suffix=env["LIBSUFFIX"],
-            ),
-        )
-    )
-
-
-RIVE_PLATFORM_MAP = {"macos": "macosx", "windows": "windows"}
-
-RIVE_TARGET_MAP = {"template_debug": "debug", "template_release": "release"}
+for lib in rive_bins:
+    env.RequireFile(lib)
 
 RIVE_SRC_DIR = "../thirdparty/rive-cpp/"
 env.Prepend(
-    LIBS=[
-        GetRiveBin("build/{platform}/bin/{target}/librive{suffix}"),
-        GetRiveBin(
-            "skia/renderer/build/{platform}/bin/{target}/librive_skia_renderer{suffix}"
-        ),
-        GetRiveBin(
-            "dependencies/{platform}/cache/bin/{target}/librive_harfbuzz{suffix}"
-        ),
-        GetRiveBin(
-            "dependencies/{platform}/cache/bin/{target}/librive_sheenbidi{suffix}"
-        ),
-    ],
+    LIBS=rive_bins,
     CPPPATH=[
         RIVE_SRC_DIR,
         join(RIVE_SRC_DIR, "include"),
@@ -63,8 +69,6 @@ env.Prepend(
         join(RIVE_SRC_DIR, "skia/renderer/src"),
     ],
 )
-
-# sources += env.GlobRecursive(join(RIVE_SRC_DIR, "skia/renderer/src"), "*.cpp")
 
 # Add source files
 env.Append(CPPPATH=["../src/"])

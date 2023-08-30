@@ -37,56 +37,27 @@
 
 using namespace godot;
 
-static const char *FitEnumPropertyHint = "Fill:1,Contain:2,Cover:3,FitWidth:4,FitHeight:5,None:6,ScaleDown:7";
-
-static const char *AlignEnumPropertyHint
-    = "TopLeft:1,TopCenter:2,TopRight:3,CenterLeft:4,Center:5,CenterRight:6,BottomLeft:7,BottomCenter:8,BottomRight:9";
-
 class RiveViewer : public Control {
     GDCLASS(RiveViewer, Control);
 
-   public:
-    enum Fit { FILL = 1, CONTAIN = 2, COVER = 3, FIT_WIDTH = 4, FIT_HEIGHT = 5, NONE = 6, SCALE_DOWN = 9 };
-
-    enum Align {
-        TOP_LEFT = 1,
-        TOP_CENTER = 2,
-        TOP_RIGHT = 3,
-        CENTER_LEFT = 4,
-        CENTER = 5,
-        CENTER_RIGHT = 6,
-        BOTTOM_LEFT = 7,
-        BOTTOM_CENTER = 8,
-        BOTTOM_RIGHT = 9
-    };
-
-    Ptr<RiveController> controller = rivestd::make_unique<RiveController>();
+   private:
+    ViewerProps props;
+    Dictionary cached_scene_property_values;
+    Ptr<RiveController> controller = rivestd::make_unique<RiveController>(&props);
     Ref<Image> image;
     Ref<ImageTexture> texture;
-
-   private:
-    String path;
-    Fit fit = Fit::CONTAIN;
-    Align alignment = Align::TOP_LEFT;
-    int artboard = -1;
-    int scene = -1;
-    int animation = -1;
-    Dictionary scene_properties;
-    Dictionary cached_scene_property_values;
-    bool disable_press = false;
-    bool disable_hover = false;
 
    protected:
     static void _bind_methods();
     void _on_resize();
-    void _on_path_changed();
-    void _on_path_changed_in_editor();
-
-    rive::Fit get_rive_fit();
-    rive::Alignment get_rive_alignment();
+    void _on_artboard_changed(int index);
+    void _on_scene_changed(int index);
+    void _on_animation_changed(int index);
+    void _on_path_changed(String path);
     void check_scene_property_changed();
 
    public:
+    RiveViewer();
     void _draw() override;
     void _process(float delta);
     void _notification(int what);
@@ -102,30 +73,27 @@ class RiveViewer : public Control {
     void set_file_path(String value);
     void set_fit(int value);
     void set_alignment(int value);
-    void set_artboard(int value);
-    void set_scene(int value);
-    void set_animation(int value);
     void set_disable_press(bool value);
     void set_disable_hover(bool value);
 
     String get_file_path() const {
-        return path;
+        return props.path();
     }
 
     int get_fit() const {
-        return fit;
+        return props.fit();
     }
 
     int get_alignment() const {
-        return alignment;
+        return props.alignment();
     }
 
     bool get_disable_press() const {
-        return disable_press;
+        return props.disable_press();
     }
 
     bool get_disable_hover() const {
-        return disable_hover;
+        return props.disable_hover();
     }
 
     /* Signals */

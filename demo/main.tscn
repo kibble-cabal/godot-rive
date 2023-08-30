@@ -31,7 +31,6 @@ columns = 3
 
 [node name="RiveViewer1" type="RiveViewer" parent="GridContainer"]
 path = "res://examples/notification.riv"
-alignment = 5
 artboard = 0
 scene = 0
 unique_name_in_owner = true
@@ -41,7 +40,6 @@ size_flags_vertical = 3
 
 [node name="RiveViewer2" type="RiveViewer" parent="GridContainer"]
 path = "res://examples/ghost.riv"
-alignment = 5
 artboard = 0
 scene = 0
 Neural = null
@@ -56,7 +54,6 @@ size_flags_vertical = 3
 
 [node name="RiveViewer3" type="RiveViewer" parent="GridContainer"]
 path = "res://examples/jellyfish_test.riv"
-alignment = 5
 artboard = 0
 scene = 0
 "Boolean 1" = null
@@ -81,10 +78,12 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="RiveViewer5" type="RiveViewer" parent="GridContainer"]
-path = "res://examples/walle.riv"
+path = "res://examples/glass_button.riv"
+fit = 3
 artboard = 0
-scene = -1
-animation = 0
+scene = 0
+selector = null
+hovering = null
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3

@@ -24,6 +24,13 @@ bool is_editor_hint() {
     return Engine::get_singleton()->is_editor_hint();
 }
 
+RiveViewer::RiveViewer() {
+    props.on_artboard_changed([this](int index) -> void { _on_artboard_changed(index); });
+    props.on_scene_changed([this](int index) -> void { _on_scene_changed(index); });
+    props.on_animation_changed([this](int index) -> void { _on_animation_changed(index); });
+    props.on_path_changed([this](String path) -> void { _on_path_changed(path); });
+}
+
 void RiveViewer::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_file_path"), &RiveViewer::get_file_path);
     ClassDB::bind_method(D_METHOD("set_file_path", "value"), &RiveViewer::set_file_path);
@@ -98,16 +105,16 @@ void RiveViewer::_gui_input(const Ref<InputEvent> &event) {
     rive::Vec2D pos = rive::Vec2D(mouse_event->get_position().x, mouse_event->get_position().y);
 
     if (auto mouse_button = dynamic_cast<InputEventMouseButton *>(event.ptr())) {
-        if (!disable_press && mouse_button->is_pressed()) {
+        if (!props.disable_press() && mouse_button->is_pressed()) {
             controller->pointer_down(pos);
             emit_signal("pressed", mouse_event->get_position());
-        } else if (!disable_press && mouse_button->is_released()) {
+        } else if (!props.disable_press() && mouse_button->is_released()) {
             controller->pointer_up(pos);
             emit_signal("released", mouse_event->get_position());
         }
     }
     if (auto mouse_motion = dynamic_cast<InputEventMouseMotion *>(event.ptr())) {
-        if (!disable_hover) controller->pointer_move(pos);
+        if (!props.disable_hover()) controller->pointer_move(pos);
     }
 }
 
@@ -140,59 +147,14 @@ void RiveViewer::_notification(int what) {
 }
 
 void RiveViewer::_ready() {
-    if (!is_editor_hint() && path.length() > 0) {
-        _on_path_changed();
-        controller->start(artboard, scene, animation, scene_properties);
+    if (!is_editor_hint() && props.path().length() > 0) {
         _on_resize();
-    }
-}
-
-rive::Fit RiveViewer::get_rive_fit() {
-    switch (fit) {
-        case Fit::COVER:
-            return rive::Fit::cover;
-        case Fit::FILL:
-            return rive::Fit::fill;
-        case Fit::FIT_HEIGHT:
-            return rive::Fit::fitHeight;
-        case Fit::FIT_WIDTH:
-            return rive::Fit::fitWidth;
-        case Fit::NONE:
-            return rive::Fit::none;
-        case Fit::SCALE_DOWN:
-            return rive::Fit::scaleDown;
-        case Fit::CONTAIN:
-        default:
-            return rive::Fit::contain;
-    }
-}
-
-rive::Alignment RiveViewer::get_rive_alignment() {
-    switch (alignment) {
-        case Align::BOTTOM_CENTER:
-            return rive::Alignment::bottomCenter;
-        case Align::BOTTOM_LEFT:
-            return rive::Alignment::bottomLeft;
-        case Align::BOTTOM_RIGHT:
-            return rive::Alignment::bottomRight;
-        case Align::CENTER:
-            return rive::Alignment::center;
-        case Align::CENTER_LEFT:
-            return rive::Alignment::centerLeft;
-        case Align::CENTER_RIGHT:
-            return rive::Alignment::centerRight;
-        case Align::TOP_CENTER:
-            return rive::Alignment::topCenter;
-        case Align::TOP_RIGHT:
-            return rive::Alignment::topRight;
-        case Align::TOP_LEFT:
-        default:
-            return rive::Alignment::topLeft;
+        controller->start();
     }
 }
 
 void RiveViewer::check_scene_property_changed() {
-    if (disable_hover && disable_press) return;  // Don't bother checking if input is disabled
+    if (props.disable_hover() && props.disable_press()) return;  // Don't bother checking if input is disabled
     if (controller && !is_null(controller->scene_wrapper)) {
         auto inputs = controller->scene_wrapper->get_inputs();
         for (int i = 0; i < inputs.size(); i++) {
@@ -216,30 +178,22 @@ int RiveViewer::height() {
 }
 
 void RiveViewer::_on_resize() {
-    if (controller) controller->resize(width(), height());
+    props.size(width(), height());
     if (!is_null(image)) unref(image);
     if (!is_null(texture)) unref(texture);
     image = Image::create(width(), height(), false, IMAGE_FORMAT);
     texture = ImageTexture::create_from_image(image);
 }
 
-void RiveViewer::_on_path_changed() {
-    controller->path = path;
-    controller->load();
-    controller->realign(get_rive_fit(), get_rive_alignment());
-    controller->resize(width(), height());
-}
-
-void RiveViewer::_on_path_changed_in_editor() {
-    set_artboard(-1);
-    notify_property_list_changed();
+void RiveViewer::_on_path_changed(String path) {
+    if (is_editor_hint()) notify_property_list_changed();
 }
 
 void RiveViewer::_get_property_list(List<PropertyInfo> *list) const {
     if (controller) {
         String artboard_hint = controller->get_artboard_property_hint();
         list->push_back(PropertyInfo(Variant::INT, "artboard", PROPERTY_HINT_ENUM, artboard_hint));
-        if (artboard != -1) {
+        if (props.artboard() != -1) {
             String scene_hint = controller->get_scene_property_hint();
             list->push_back(PropertyInfo(Variant::INT, "scene", PROPERTY_HINT_ENUM, scene_hint));
             list->push_back(PropertyInfo(
@@ -247,10 +201,10 @@ void RiveViewer::_get_property_list(List<PropertyInfo> *list) const {
                 "animation",
                 PROPERTY_HINT_ENUM,
                 controller->get_animation_property_hint(),
-                (scene != -1) ? (PROPERTY_USAGE_DEFAULT & PROPERTY_USAGE_READ_ONLY) : PROPERTY_USAGE_DEFAULT
+                (props.scene() != -1) ? (PROPERTY_USAGE_DEFAULT & PROPERTY_USAGE_READ_ONLY) : PROPERTY_USAGE_DEFAULT
             ));
         }
-        if (scene != -1) {
+        if (props.scene() != -1) {
             list->push_back(PropertyInfo(Variant::NIL, "Scene", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_CATEGORY));
             controller->get_scene_property_list(list);
         }
@@ -258,80 +212,61 @@ void RiveViewer::_get_property_list(List<PropertyInfo> *list) const {
 }
 
 void RiveViewer::set_file_path(String value) {
-    path = value;
-    if (is_editor_hint()) _on_path_changed_in_editor();
-    _on_path_changed();
+    props.path(value);
 }
 
 void RiveViewer::set_fit(int value) {
-    fit = static_cast<RiveViewer::Fit>(value);
-    if (controller) controller->realign(get_rive_fit(), get_rive_alignment());
+    props.fit((Fit)value);
 }
 
 void RiveViewer::set_alignment(int value) {
-    alignment = static_cast<RiveViewer::Align>(value);
-    if (controller) controller->realign(get_rive_fit(), get_rive_alignment());
+    props.alignment((Align)value);
 }
 
-void RiveViewer::set_artboard(int value) {
-    if (artboard != value) {
-        set_animation(-1);
-        set_scene(-1);
-        artboard = value;
-        if (controller) controller->set_artboard(value);
-        notify_property_list_changed();
-    }
+void RiveViewer::_on_artboard_changed(int _index) {
+    notify_property_list_changed();
 }
 
-void RiveViewer::set_scene(int value) {
-    if (scene != value) {
-        scene = value;
-        cached_scene_property_values.clear();
-        scene_properties.clear();
-        if (controller) controller->set_scene(value);
-        notify_property_list_changed();
-    }
+void RiveViewer::_on_scene_changed(int _index) {
+    cached_scene_property_values.clear();
+    notify_property_list_changed();
 }
 
-void RiveViewer::set_animation(int value) {
+void RiveViewer::_on_animation_changed(int _index) {
     try {
-        if (animation != value) {
-            animation = value;
-            if (controller) controller->set_animation(value);
-            if (scene != -1)
-                throw RiveException("Animation will not play because a scene is selected.")
-                    .from(this, "set_animation")
-                    .warning();
-        }
+        if (props.scene() != -1)
+            throw RiveException("Animation will not play because a scene is selected.")
+                .from(this, "set_animation")
+                .warning();
     } catch (RiveException error) {
         error.report();
     }
 }
 
 void RiveViewer::set_disable_press(bool value) {
-    disable_press = value;
+    props.disable_press(value);
 }
 
 void RiveViewer::set_disable_hover(bool value) {
-    disable_hover = value;
+    props.disable_hover(value);
 }
 
 bool RiveViewer::_set(const StringName &prop, const Variant &value) {
     String name = prop;
     if (name == "artboard") {
-        set_artboard((int)value);
+        props.artboard((int)value);
         return true;
     }
     if (name == "scene") {
-        set_scene((int)value);
+        props.scene((int)value);
         return true;
     }
     if (name == "animation") {
-        set_animation((int)value);
+        props.animation((int)value);
         return true;
     }
     if (controller && controller->get_scene_property_names().has(name)) {
-        scene_properties[name] = value;
+        props.scene_property(name, value);
         return true;
     }
     return false;
@@ -340,19 +275,19 @@ bool RiveViewer::_set(const StringName &prop, const Variant &value) {
 bool RiveViewer::_get(const StringName &prop, Variant &return_value) const {
     String name = prop;
     if (name == "artboard") {
-        return_value = artboard;
+        return_value = props.artboard();
         return true;
     }
     if (name == "scene") {
-        return_value = scene;
+        return_value = props.scene();
         return true;
     }
     if (name == "animation") {
-        return_value = animation;
+        return_value = props.animation();
         return true;
     }
-    if (scene_properties.has(name)) {
-        return_value = scene_properties[name];
+    if (props.has_scene_property(name)) {
+        return_value = props.scene_property(name);
         return true;
     }
     return false;
@@ -387,8 +322,8 @@ void RiveViewer::go_to_artboard(Ref<RiveArtboard> artboard_value) {
     try {
         if (is_null(artboard_value))
             throw RiveException("Attempted to go to null artboard").from(this, "go_to_artboard").warning();
-        set_artboard(artboard_value->get_index());
-        if (controller && is_inside_tree()) controller->start(artboard, scene, animation, scene_properties);
+        props.artboard(artboard_value->get_index());
+        if (controller && is_inside_tree()) controller->start();
     } catch (RiveException error) {
         error.report();
     }
@@ -398,8 +333,8 @@ void RiveViewer::go_to_scene(Ref<RiveScene> scene_value) {
     try {
         if (is_null(scene_value))
             throw RiveException("Attempted to go to null scene").from(this, "go_to_scene").warning();
-        set_scene(scene_value->get_index());
-        if (controller && is_inside_tree()) controller->start(artboard, scene, animation, scene_properties);
+        props.scene(scene_value->get_index());
+        if (controller && is_inside_tree()) controller->start();
     } catch (RiveException error) {
         error.report();
     }
@@ -409,9 +344,9 @@ void RiveViewer::go_to_animation(Ref<RiveAnimation> animation_value) {
     try {
         if (is_null(animation_value))
             throw RiveException("Attempted to go to null animation").from(this, "go_to_animation").warning();
-        set_animation(animation_value->get_index());
-        if (controller && is_inside_tree()) controller->start(artboard, scene, animation, scene_properties);
-        if (scene != -1)
+        props.animation(animation_value->get_index());
+        if (controller && is_inside_tree()) controller->start();
+        if (props.scene() != -1)
             throw RiveException("Went to animation, but it won't play because a scene is currently playing.")
                 .from(this, "go_to_animation")
                 .warning();

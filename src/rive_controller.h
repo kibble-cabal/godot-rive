@@ -27,15 +27,10 @@
 // Extension
 #include "api/rive_file.hpp"
 #include "utils/memory.hpp"
+#include "viewer_props.hpp"
 
 class RiveController {
    public:
-    godot::String path;
-    rive::Vec2D size = rive::Vec2D{ 1, 1 };
-
-    rive::Fit fit = rive::Fit::contain;
-    rive::Alignment alignment = rive::Alignment::topLeft;
-
     float elapsed = 0;
     bool is_visible = true;
 
@@ -59,20 +54,23 @@ class RiveController {
     Ptr<rive::SkiaFactory> factory = nullptr;
     rive::Mat2D inverse_transform;
 
+    ViewerProps *props = nullptr;
+
    public:
     RiveController();
-    RiveController(godot::String path_value);
+    RiveController(ViewerProps *props_value);
+
     void load();
-    void start(int artboard_index, int scene_index, int animation_index, const godot::Dictionary &scene_properties);
-    void resize(unsigned int width, unsigned int height);
+    void start();
+    void resize();
     void pointer_down(rive::Vec2D position);
     void pointer_up(rive::Vec2D position);
     void pointer_move(rive::Vec2D position);
     void realign();
-    void realign(rive::Fit fit, rive::Alignment align);
-    void set_artboard(int artboard_index);
-    void set_scene(int scene_index);
-    void set_animation(int animation_index);
+    void on_scene_properties_changed();
+    void on_artboard_changed(int index);
+    void on_scene_changed(int index);
+    void on_animation_changed(int index);
     godot::String get_artboard_property_hint();
     godot::String get_scene_property_hint();
     godot::String get_animation_property_hint();
@@ -80,6 +78,7 @@ class RiveController {
     void get_scene_property_list(godot::List<godot::PropertyInfo> *list);
     godot::PackedByteArray frame(float delta);
     void set_scene_properties(const godot::Dictionary &props);
+    void add_listeners();
 
    private:
     godot::PackedByteArray byte_array();

@@ -16,7 +16,6 @@
 // Extension
 #include "rive_exceptions.hpp"
 #include "utils/godot_macros.hpp"
-#include "utils/rive.hpp"
 #include "utils/types.hpp"
 
 const Image::Format IMAGE_FORMAT = Image::Format::FORMAT_RGBA8;
@@ -114,7 +113,7 @@ void RiveViewer::_gui_input(const Ref<InputEvent> &event) {
 
 void RiveViewer::_draw() {
     if (!is_editor_hint() && !is_null(texture)) {
-        draw_texture(texture, Vector2(0, 0));
+        draw_texture_rect(texture, Rect2(0, 0, width(), height()), false);
     }
 }
 
@@ -122,10 +121,10 @@ void RiveViewer::_process(float delta) {
     if (!is_editor_hint() && controller) {
         if (is_null(image)) image = Image::create(width(), height(), false, IMAGE_FORMAT);
         if (is_null(texture)) texture = ImageTexture::create_from_image(image);
-
+        controller->is_visible = is_visible();
         auto bytes = controller->frame(delta);
         if (bytes.size()) {
-            image->load_png_from_buffer(bytes);
+            image->set_data(width(), height(), false, IMAGE_FORMAT, bytes);
             texture->update(image);
             queue_redraw();
         }
@@ -193,6 +192,7 @@ rive::Alignment RiveViewer::get_rive_alignment() {
 }
 
 void RiveViewer::check_scene_property_changed() {
+    if (disable_hover && disable_press) return;  // Don't bother checking if input is disabled
     if (controller && !is_null(controller->scene_wrapper)) {
         auto inputs = controller->scene_wrapper->get_inputs();
         for (int i = 0; i < inputs.size(); i++) {

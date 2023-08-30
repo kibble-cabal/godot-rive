@@ -74,7 +74,7 @@ godot::PackedByteArray RiveController::frame(float delta) {
     if (scene) did_advance = scene->advanceAndApply(delta);
     else if (animation) did_advance = animation->advanceAndApply(delta);
     else did_advance = artboard->advance(delta);
-    if (did_advance) {
+    if (did_advance && is_visible) {
         surface->getCanvas()->clear(SkColors::kTransparent);
         artboard->draw(renderer.get());
         return byte_array();
@@ -140,15 +140,21 @@ void RiveController::set_animation(int index) {
 }
 
 godot::PackedByteArray RiveController::byte_array() {
-    if (!surface) return godot::PackedByteArray();
-    sk_sp<SkData> data = surface->makeImageSnapshot()->encodeToData();
-    const uint8_t *bytes = data->bytes();
-    godot::PackedByteArray arr = godot::PackedByteArray();
-    arr.resize(data->size());
-    for (int i = 0; i < data->size(); i++) {
-        arr[i] = bytes[i];
+    SkPixmap pixmap;
+    godot::PackedByteArray bytes;
+    if (!surface) return bytes;
+    if (!surface->peekPixels(&pixmap)) return bytes;
+    SkImageInfo info = surface->imageInfo();
+    size_t bytes_per_pixel = info.bytesPerPixel(), row_bytes = pixmap.rowBytes();
+    bytes.resize(row_bytes * info.height());
+    for (int y = 0; y < info.height(); y++) {
+        for (int x = 0; x < info.width(); x++) {
+            int offset = y * row_bytes + x * bytes_per_pixel;
+            auto addr = pixmap.addr32(x, y);
+            bytes.encode_u32(offset, *addr);
+        }
     }
-    return arr;
+    return bytes;
 }
 
 godot::String RiveController::get_artboard_property_hint() {

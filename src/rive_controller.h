@@ -37,6 +37,7 @@ class RiveController {
     rive::Alignment alignment = rive::Alignment::topLeft;
 
     float elapsed = 0;
+    bool is_visible = true;
 
     friend class RiveViewer;
 

@@ -2,7 +2,11 @@ extends Control
 
 
 @onready var viewer1 = %RiveViewer1 as RiveViewer
+@onready var viewer2 = %RiveViewer2 as RiveViewer
+@onready var viewer3 = %RiveViewer3 as RiveViewer
 @onready var viewer4 = %RiveViewer4 as RiveViewer
+@onready var viewer5 = %RiveViewer5 as RiveViewer
+@onready var viewer6 = %RiveViewer6 as RiveViewer
 
 
 func _init() -> void:

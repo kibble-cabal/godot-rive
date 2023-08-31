@@ -57,7 +57,7 @@ class RiveViewer : public Control {
     void check_scene_property_changed();
 
    public:
-    RiveViewer();
+    void _init();
     void _draw() override;
     void _process(float delta);
     void _notification(int what);

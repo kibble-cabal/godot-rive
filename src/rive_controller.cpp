@@ -44,19 +44,6 @@ void RiveController::load() {
     }
 }
 
-void RiveController::start() {
-    try {
-        elapsed = 0;
-        on_artboard_changed(props->artboard());
-        on_scene_changed(props->scene());
-        on_animation_changed(props->animation());
-        on_scene_properties_changed();
-        if (props->artboard() == -1) throw RiveException("Started rive animation, but no artboard selected.").warning();
-    } catch (RiveException error) {
-        error.report();
-    }
-}
-
 void RiveController::resize() {
     surface = SkSurface::MakeRaster(make_image_info());
     renderer = rivestd::make_unique<SkiaRenderer>(surface->getCanvas());
@@ -78,18 +65,32 @@ void RiveController::realign() {
     }
 }
 
-godot::PackedByteArray RiveController::frame(float delta) {
-    if (!file || !renderer || !surface || !artboard) return godot::PackedByteArray();
+bool RiveController::advance(float delta) {
     elapsed += delta;
-    bool did_advance = false;
-    if (scene) did_advance = scene->advanceAndApply(delta);
-    else if (animation) did_advance = animation->advanceAndApply(delta);
-    else did_advance = artboard->advance(delta);
-    if (did_advance && is_visible) {
+    if (scene) return scene->advanceAndApply(delta);
+    else if (animation) return animation->advanceAndApply(delta);
+    else if (artboard) return artboard->advance(delta);
+    else return false;
+}
+
+godot::PackedByteArray RiveController::redraw() {
+    if (surface && artboard && renderer) {
         surface->getCanvas()->clear(SkColors::kTransparent);
         artboard->draw(renderer.get());
         return byte_array();
     }
+    return godot::PackedByteArray();
+}
+
+godot::PackedByteArray RiveController::frame(float delta) {
+    if (!file || !renderer || !surface || !artboard) return godot::PackedByteArray();
+    if (advance(delta) && is_visible) return redraw();
+    return godot::PackedByteArray();
+}
+
+godot::PackedByteArray RiveController::editor_frame(float delta) {
+    if (!file || !renderer || !surface || !artboard) return godot::PackedByteArray();
+    if (advance(0.0) && is_visible) return redraw();
     return godot::PackedByteArray();
 }
 
@@ -107,8 +108,8 @@ void RiveController::pointer_move(rive::Vec2D position) {
 
 void RiveController::on_artboard_changed(int index) {
     // Delete old artboard reference
-    if (!is_null(artboard_wrapper)) unref(artboard_wrapper);
     if (artboard) artboard.release();
+    if (!is_null(artboard_wrapper)) unref(artboard_wrapper);
 
     // Make new artboard reference
     if (index > -1 && file) artboard = file->artboardAt(index);
@@ -120,8 +121,8 @@ void RiveController::on_artboard_changed(int index) {
 
 void RiveController::on_scene_changed(int index) {
     // Delete old scene reference
-    if (!is_null(scene_wrapper)) unref(scene_wrapper);
     if (scene) scene.release();
+    if (!is_null(scene_wrapper)) unref(scene_wrapper);
 
     // Make new scene reference
     if (index > -1 && artboard) scene = artboard->stateMachineAt(index);
@@ -133,8 +134,8 @@ void RiveController::on_scene_changed(int index) {
 
 void RiveController::on_animation_changed(int index) {
     // Delete old animation reference
-    if (!is_null(animation_wrapper)) unref(animation_wrapper);
     if (animation) animation.release();
+    if (!is_null(animation_wrapper)) unref(animation_wrapper);
 
     // Make new animation reference
     if (index > -1 && artboard) animation = artboard->animationAt(index);

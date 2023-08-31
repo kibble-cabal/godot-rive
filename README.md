@@ -51,7 +51,7 @@ python build.py --help
 - [x] Add signals for event listeners (hover, pressed, etc)
 - [x] Disable/enable event listeners (hover, pressed, etc) in API and editor
 - [x] Optimization
-- [ ] Editor preview
+- [x] Editor preview
 - [ ] Windows/Linux support
 - [ ] iOS/Android support
 - [ ] Any missing features

@@ -61,7 +61,6 @@ class RiveController {
     RiveController(ViewerProps *props_value);
 
     void load();
-    void start();
     void resize();
     void pointer_down(rive::Vec2D position);
     void pointer_up(rive::Vec2D position);
@@ -76,13 +75,17 @@ class RiveController {
     godot::String get_animation_property_hint();
     godot::PackedStringArray get_scene_property_names();
     void get_scene_property_list(godot::List<godot::PropertyInfo> *list);
-    godot::PackedByteArray frame(float delta);
     void set_scene_properties(const godot::Dictionary &props);
     void add_listeners();
+    godot::PackedByteArray frame(float delta);
+    godot::PackedByteArray editor_frame(float delta);
 
    private:
+    godot::PackedByteArray redraw();
     godot::PackedByteArray byte_array();
     SkImageInfo make_image_info();
+    bool advance(float delta);
+    void ensure_has_instances();
 };
 
 #endif

@@ -24,7 +24,7 @@ bool is_editor_hint() {
     return Engine::get_singleton()->is_editor_hint();
 }
 
-RiveViewer::RiveViewer() {
+void RiveViewer::_init() {
     props.on_artboard_changed([this](int index) -> void { _on_artboard_changed(index); });
     props.on_scene_changed([this](int index) -> void { _on_scene_changed(index); });
     props.on_animation_changed([this](int index) -> void { _on_animation_changed(index); });
@@ -100,7 +100,7 @@ void RiveViewer::_bind_methods() {
 
 void RiveViewer::_gui_input(const Ref<InputEvent> &event) {
     auto mouse_event = dynamic_cast<InputEventMouse *>(event.ptr());
-    if (!mouse_event || !controller) return;
+    if (!mouse_event || !controller || is_editor_hint()) return;
 
     rive::Vec2D pos = rive::Vec2D(mouse_event->get_position().x, mouse_event->get_position().y);
 
@@ -119,17 +119,19 @@ void RiveViewer::_gui_input(const Ref<InputEvent> &event) {
 }
 
 void RiveViewer::_draw() {
-    if (!is_editor_hint() && !is_null(texture)) {
+    if (!is_null(texture)) {
         draw_texture_rect(texture, Rect2(0, 0, width(), height()), false);
     }
 }
 
 void RiveViewer::_process(float delta) {
-    if (!is_editor_hint() && controller) {
+    if (is_node_ready() && controller) {
         if (is_null(image)) image = Image::create(width(), height(), false, IMAGE_FORMAT);
         if (is_null(texture)) texture = ImageTexture::create_from_image(image);
         controller->is_visible = is_visible();
-        auto bytes = controller->frame(delta);
+        PackedByteArray bytes;
+        if (is_editor_hint()) bytes = controller->editor_frame(delta);
+        else bytes = controller->frame(delta);
         if (bytes.size()) {
             image->set_data(width(), height(), false, IMAGE_FORMAT, bytes);
             texture->update(image);
@@ -147,10 +149,7 @@ void RiveViewer::_notification(int what) {
 }
 
 void RiveViewer::_ready() {
-    if (!is_editor_hint() && props.path().length() > 0) {
-        _on_resize();
-        controller->start();
-    }
+    _on_resize();
 }
 
 void RiveViewer::check_scene_property_changed() {
@@ -323,7 +322,6 @@ void RiveViewer::go_to_artboard(Ref<RiveArtboard> artboard_value) {
         if (is_null(artboard_value))
             throw RiveException("Attempted to go to null artboard").from(this, "go_to_artboard").warning();
         props.artboard(artboard_value->get_index());
-        if (controller && is_inside_tree()) controller->start();
     } catch (RiveException error) {
         error.report();
     }
@@ -334,7 +332,6 @@ void RiveViewer::go_to_scene(Ref<RiveScene> scene_value) {
         if (is_null(scene_value))
             throw RiveException("Attempted to go to null scene").from(this, "go_to_scene").warning();
         props.scene(scene_value->get_index());
-        if (controller && is_inside_tree()) controller->start();
     } catch (RiveException error) {
         error.report();
     }
@@ -345,7 +342,6 @@ void RiveViewer::go_to_animation(Ref<RiveAnimation> animation_value) {
         if (is_null(animation_value))
             throw RiveException("Attempted to go to null animation").from(this, "go_to_animation").warning();
         props.animation(animation_value->get_index());
-        if (controller && is_inside_tree()) controller->start();
         if (props.scene() != -1)
             throw RiveException("Went to animation, but it won't play because a scene is currently playing.")
                 .from(this, "go_to_animation")

@@ -1,5 +1,5 @@
-#ifndef RIVEEXTENSION_H
-#define RIVEEXTENSION_H
+#ifndef RIVEEXTENSION_VIEWER_H
+#define RIVEEXTENSION_VIEWER_H
 
 // stdlib
 #include <vector>

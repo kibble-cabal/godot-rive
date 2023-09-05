@@ -1,19 +1,19 @@
-#include "rive_extension.h"
+#include "rive_viewer.h"
 
 #include <algorithm>
 
-// Godot
+// godot-cpp
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/classes/rendering_device.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/core/binder_common.hpp>
 #include <godot_cpp/core/class_db.hpp>
 
-// Rive
+// rive-cpp
 #include <rive/animation/linear_animation.hpp>
 #include <rive/animation/linear_animation_instance.hpp>
 
-// Extension
+// extension
 #include "rive_exceptions.hpp"
 #include "utils/godot_macros.hpp"
 #include "utils/types.hpp"

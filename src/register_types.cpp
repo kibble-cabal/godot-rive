@@ -6,7 +6,7 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
-#include "rive_extension.h"
+#include "rive_viewer.h"
 
 using namespace godot;
 

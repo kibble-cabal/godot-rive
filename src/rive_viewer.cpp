@@ -32,6 +32,7 @@ RiveViewer::RiveViewer() {
     props.on_animation_changed([this](int index) { _on_animation_changed(index); });
     props.on_path_changed([this](String path) { _on_path_changed(path); });
     props.on_size_changed([this](float w, float h) { _on_size_changed(w, h); });
+    props.on_transform_changed([this]() { _on_transform_changed(); });
 }
 
 void RiveViewer::_bind_methods() {
@@ -247,6 +248,7 @@ bool RiveViewer::_set(const StringName &prop, const Variant &value) {
         props.animation((int)value);
         return true;
     }
+    inst.instantiate();
     if (exists(inst.scene()) && inst.scene()->get_input_names().has(name)) {
         props.scene_property(name, value);
         return true;
@@ -276,11 +278,14 @@ bool RiveViewer::_get(const StringName &prop, Variant &return_value) const {
 }
 
 void RiveViewer::_on_size_changed(float w, float h) {
-    if (sk.renderer) sk.renderer->transform(inst.get_transform());
     if (!is_null(image)) unref(image);
     if (!is_null(texture)) unref(texture);
     image = Image::create(width(), height(), false, IMAGE_FORMAT);
     texture = ImageTexture::create_from_image(image);
+}
+
+void RiveViewer::_on_transform_changed() {
+    if (sk.renderer) sk.renderer->transform(inst.current_transform);
 }
 
 bool RiveViewer::advance(float delta) {

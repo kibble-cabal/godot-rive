@@ -43,9 +43,8 @@ struct RiveInstance {
             props->on_artboard_changed([this](int index) { on_artboard_changed(index); });
             props->on_scene_changed([this](int index) { on_scene_changed(index); });
             props->on_animation_changed([this](int index) { on_animation_changed(index); });
-            props->on_size_changed([this](float w, float h) { on_size_changed(w, h); });
             props->on_scene_properties_changed([this]() { on_scene_properties_changed(); });
-            props->on_property_changed([this]() { on_other_property_changed(); });
+            props->on_transform_changed([this]() { on_transform_changed(); });
         }
     }
 
@@ -153,11 +152,6 @@ struct RiveInstance {
         if (exists(artboard())) artboard()->get_animation(index);
     }
 
-    void on_size_changed(float w, float h) {
-        if (exists(artboard())) artboard()->queue_redraw();
-        current_transform = get_transform();
-    }
-
     void on_scene_properties_changed() {
         auto sm = scene();
         if (exists(sm)) {
@@ -170,8 +164,9 @@ struct RiveInstance {
         }
     }
 
-    void on_other_property_changed() {
+    void on_transform_changed() {
         current_transform = get_transform();
+        if (exists(artboard())) artboard()->queue_redraw();
     }
 };
 

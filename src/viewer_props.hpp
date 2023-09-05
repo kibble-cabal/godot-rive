@@ -97,6 +97,8 @@ struct PropEvent {
 };
 
 struct ViewerProps {
+    friend class RiveViewer;
+
    private:
     String _path;
     int _width = 1;
@@ -113,12 +115,12 @@ struct ViewerProps {
 
     /* Events */
     PropEvent<String> path_changed;
-    PropEvent<> property_changed;
     PropEvent<> scene_properties_changed;
     PropEvent<int> artboard_changed;
     PropEvent<int> scene_changed;
     PropEvent<int> animation_changed;
     PropEvent<float, float> size_changed;
+    PropEvent<> transform_changed;
 
    public:
     /* Event handlers */
@@ -126,8 +128,8 @@ struct ViewerProps {
         path_changed.subscribe(callback);
     }
 
-    void on_property_changed(Callback<> callback) {
-        property_changed.subscribe(callback);
+    void on_transform_changed(Callback<> callback) {
+        transform_changed.subscribe(callback);
     }
 
     void on_scene_properties_changed(Callback<> callback) {
@@ -230,6 +232,7 @@ struct ViewerProps {
         if (value != _width) {
             _width = value;
             size_changed.emit(_width, _height);
+            transform_changed.emit();
         }
     }
 
@@ -237,14 +240,15 @@ struct ViewerProps {
         if (value != _height) {
             _height = value;
             size_changed.emit(_width, _height);
+            transform_changed.emit();
         }
     }
 
     void size(int w, int h) {
         if (_width != w || _height != h) {
             _width = w, _height = h;
-            property_changed.emit();
             size_changed.emit(_width, _height);
+            transform_changed.emit();
         }
     }
 
@@ -254,6 +258,7 @@ struct ViewerProps {
             animation(-1);
             _artboard = index;
             artboard_changed.emit(index);
+            transform_changed.emit();
         }
     }
 
@@ -262,6 +267,7 @@ struct ViewerProps {
             _scene_properties.clear();
             _scene = index;
             scene_changed.emit(index);
+            scene_properties_changed.emit();
         }
     }
 
@@ -275,33 +281,30 @@ struct ViewerProps {
     void fit(FIT value) {
         if (value != _fit) {
             _fit = value;
-            property_changed.emit();
+            transform_changed.emit();
         }
     }
 
     void alignment(ALIGN value) {
         _alignment = value;
-        property_changed.emit();
+        transform_changed.emit();
     }
 
     void disable_press(bool value) {
         if (_disable_press != value) {
             _disable_press = value;
-            property_changed.emit();
         }
     }
 
     void disable_hover(bool value) {
         if (_disable_hover != value) {
             _disable_hover = value;
-            property_changed.emit();
         }
     }
 
     void paused(bool value) {
         if (_paused != value) {
             _paused = value;
-            property_changed.emit();
         }
     }
 

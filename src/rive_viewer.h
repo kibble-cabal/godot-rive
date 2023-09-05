@@ -58,6 +58,7 @@ class RiveViewer : public Control {
     void _on_scene_changed(int index);
     void _on_animation_changed(int index);
     void _on_size_changed(float w, float h);
+    void _on_transform_changed();
     void check_scene_property_changed();
     bool advance(float delta);
     PackedByteArray frame(float delta);

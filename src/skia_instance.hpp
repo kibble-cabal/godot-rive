@@ -28,7 +28,7 @@ struct SkiaInstance {
     void set_props(ViewerProps *props_value) {
         props = props_value;
         if (props) {
-            props->on_size_changed([this](float w, float h) { on_size_changed(w, h); });
+            props->on_transform_changed([this]() { on_transform_changed(); });
         }
     }
 
@@ -64,7 +64,7 @@ struct SkiaInstance {
     }
 
    private:
-    void on_size_changed(float w, float h) {
+    void on_transform_changed() {
         surface = SkSurface::MakeRaster(image_info());
         renderer = rivestd::make_unique<SkiaRenderer>(surface->getCanvas());
     }

@@ -18,47 +18,83 @@
 
 // extension
 #include "api/rive_artboard.hpp"
+#include "utils/read_rive_file.hpp"
 
 using namespace godot;
 
 class RiveFile : public Resource {
     GDCLASS(RiveFile, Resource);
 
-   private:
-    rive::File *file;
-    String path;
-    TypedArray<RiveArtboard> artboards;
-
     friend class RiveViewer;
     friend class RiveController;
+    friend class RiveInstance;
+
+   private:
+    Ptr<rive::File> file;
+    String path = "";
+
+    Instances<RiveArtboard> artboards = Instances<RiveArtboard>([this](int index) -> Ref<RiveArtboard> {
+        if (file && file->artboardCount() > index && index >= 0)
+            return RiveArtboard::MakeRef(
+                file.get(),
+                file->artboardAt(index),
+                index,
+                file->artboardNameAt(index).c_str()
+            );
+        else return nullptr;
+    });
 
    protected:
     static void _bind_methods() {
         ClassDB::bind_method(D_METHOD("exists"), &RiveFile::exists);
         ClassDB::bind_method(D_METHOD("get_path"), &RiveFile::get_path);
         ClassDB::bind_method(D_METHOD("get_artboards"), &RiveFile::get_artboards);
+        ClassDB::bind_method(D_METHOD("get_artboard_names"), &RiveFile::get_artboard_names);
         ClassDB::bind_method(D_METHOD("get_artboard_count"), &RiveFile::get_artboard_count);
         ClassDB::bind_method(D_METHOD("get_artboard", "index"), &RiveFile::get_artboard);
         ClassDB::bind_method(D_METHOD("find_artboard", "name"), &RiveFile::find_artboard);
+        ClassDB::bind_method(D_METHOD("reset_artboard", "index"), &RiveFile::reset_artboard);
     }
 
-    void cache_artboards() {
-        artboards.clear();
-        if (file) {
-            int size = file->artboardCount();
-            artboards.resize(size);
-            for (int i = 0; i < size; i++) artboards[i] = RiveArtboard::MakeRef(file, file->artboardAt(i).get(), i);
-        }
+    void _instantiate_artboards() {
+        if (exists())
+            for (int i = 0; i < file->artboardCount(); i++) {
+                auto ab = get_artboard(i);
+                if (ab.is_null() || !ab->exists()) throw RiveException("Failed to instantiate artboard.");
+            }
+    }
+
+    String _get_artboard_property_hint() const {
+        PackedStringArray hints;
+        hints.append("None:-1");
+        if (file)
+            artboards.for_each([&hints](Ref<RiveArtboard> artboard, int i) {
+                if (artboard->exists()) hints.append(artboard->get_name() + ":" + std::to_string(i).c_str());
+            });
+        return String(",").join(hints);
     }
 
    public:
-    static Ref<RiveFile> MakeRef(rive::File *file_value, String path_value) {
+    static Ref<RiveFile> MakeRef(Ptr<rive::File> file_value, String path_value) {
         if (!file_value) return nullptr;
         Ref<RiveFile> obj = memnew(RiveFile);
-        obj->file = file_value;
+        obj->file = std::move(file_value);
         obj->path = path_value;
-        obj->cache_artboards();
         return obj;
+    }
+
+    static Ref<RiveFile> Load(String path, rive::Factory *factory) {
+        try {
+            Ptr<rive::File> file = read_rive_file(path, factory);
+            if (file != nullptr) {
+                auto file_wrapper = RiveFile::MakeRef(std::move(file), path);
+                GDPRINT("Successfully imported <", path, ">!");
+                return file_wrapper;
+            } else throw RiveException("Unable to import <" + path + ">");
+        } catch (RiveException error) {
+            error.report();
+        }
+        return nullptr;
     }
 
     RiveFile() {}
@@ -72,25 +108,29 @@ class RiveFile : public Resource {
     }
 
     TypedArray<RiveArtboard> get_artboards() const {
-        return artboards;
+        return artboards.get_list();
+    }
+
+    PackedStringArray get_artboard_names() const {
+        PackedStringArray names;
+        artboards.for_each([&names](Ref<RiveArtboard> artboard, int _) { names.append(artboard->get_name()); });
+        return names;
     }
 
     int get_artboard_count() const {
-        return artboards.size();
+        return artboards.get_size();
     }
 
-    Ref<RiveArtboard> get_artboard(int index) const {
-        if (index > 0 && artboards.size() > index) return artboards[index];
-        return nullptr;
+    Ref<RiveArtboard> get_artboard(int index) {
+        return artboards.get(index);
     }
 
     Ref<RiveArtboard> find_artboard(String name) const {
-        std::string artboard_name = (char *)name.ptrw();
-        for (int i = 0; i < get_artboard_count(); i++) {
-            Ref<RiveArtboard> artboard = artboards[i];
-            if (artboard->get_name() == name) return artboard;
-        }
-        return nullptr;
+        return artboards.find([name](Ref<RiveArtboard> artboard, int _) { return artboard->get_name() == name; });
+    }
+
+    Ref<RiveArtboard> reset_artboard(int index) {
+        return artboards.reinstantiate(index);
     }
 
     String _to_string() const {
@@ -101,11 +141,11 @@ class RiveFile : public Resource {
     }
 
     bool operator==(const RiveFile &other) const {
-        return other.file == file;
+        return other.path == path;
     }
 
     bool operator!=(const RiveFile &other) const {
-        return other.file != file;
+        return other.path != path;
     }
 };
 

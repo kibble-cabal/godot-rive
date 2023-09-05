@@ -23,7 +23,7 @@
 using namespace godot;
 using namespace rive;
 
-Ptr<File> read_rive_file(String path, Factory *factory) {
+static Ptr<File> read_rive_file(String path, Factory *factory) {
     CerrRedirect errs = CerrRedirect();
     try {
         if (path.get_extension().to_lower() != "riv") throw RiveException("No .riv path provided.").no_report();

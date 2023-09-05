@@ -21,4 +21,9 @@ void nullify(Ptr<InnerType> obj) {
     }
 };
 
+template <class T>
+bool exists(Ref<T> ref) {
+    return !is_null(ref) && ref->exists();
+}
+
 #endif

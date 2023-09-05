@@ -1,7 +1,7 @@
 #ifndef RIVEEXTENSION_H
 #define RIVEEXTENSION_H
 
-// Stdlib
+// stdlib
 #include <vector>
 
 // godot-cpp
@@ -15,7 +15,7 @@
 #include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/core/binder_common.hpp>
 #include <godot_cpp/core/class_db.hpp>
-#include <godot_cpp/variant/dictionary.hpp>
+#include <godot_cpp/variant/builtin_types.hpp>
 
 // rive-cpp
 #include <rive/animation/state_machine_instance.hpp>
@@ -31,9 +31,11 @@
 
 // extension
 #include "api/rive_file.hpp"
-#include "rive_controller.h"
+#include "rive_instance.hpp"
+#include "skia_instance.hpp"
 #include "utils/out_redirect.hpp"
 #include "utils/types.hpp"
+#include "viewer_props.hpp"
 
 using namespace godot;
 
@@ -42,22 +44,27 @@ class RiveViewer : public Control {
 
    private:
     ViewerProps props;
+    RiveInstance inst;
+    SkiaInstance sk;
+    float elapsed = 0;
     Dictionary cached_scene_property_values;
-    Ptr<RiveController> controller = rivestd::make_unique<RiveController>(&props);
     Ref<Image> image;
     Ref<ImageTexture> texture;
 
    protected:
     static void _bind_methods();
-    void _on_resize();
+    void _on_path_changed(String path);
     void _on_artboard_changed(int index);
     void _on_scene_changed(int index);
     void _on_animation_changed(int index);
-    void _on_path_changed(String path);
+    void _on_size_changed(float w, float h);
     void check_scene_property_changed();
+    bool advance(float delta);
+    PackedByteArray frame(float delta);
+    PackedByteArray redraw();
 
    public:
-    void _init();
+    RiveViewer();
     void _draw() override;
     void _process(float delta);
     void _notification(int what);
@@ -70,11 +77,33 @@ class RiveViewer : public Control {
     int width();
     int height();
 
-    void set_file_path(String value);
-    void set_fit(int value);
-    void set_alignment(int value);
-    void set_disable_press(bool value);
-    void set_disable_hover(bool value);
+    /* Setters */
+
+    void set_file_path(String value) {
+        props.path(value);
+    }
+
+    void set_fit(int value) {
+        props.fit((FIT)value);
+    }
+
+    void set_alignment(int value) {
+        props.alignment((ALIGN)value);
+    }
+
+    void set_disable_press(bool value) {
+        props.disable_press(value);
+    }
+
+    void set_disable_hover(bool value) {
+        props.disable_hover(value);
+    }
+
+    void set_paused(bool value) {
+        props.paused(value);
+    }
+
+    /* Getters */
 
     String get_file_path() const {
         return props.path();
@@ -96,6 +125,10 @@ class RiveViewer : public Control {
         return props.disable_hover();
     }
 
+    bool get_paused() const {
+        return props.paused();
+    }
+
     /* Signals */
 
     void pressed(Vector2 position) const {}
@@ -115,6 +148,10 @@ class RiveViewer : public Control {
     void go_to_artboard(Ref<RiveArtboard> artboard);
     void go_to_scene(Ref<RiveScene> scene);
     void go_to_animation(Ref<RiveAnimation> animation);
+
+    void press_mouse(Vector2 position);
+    void release_mouse(Vector2 position);
+    void move_mouse(Vector2 position);
 };
 
 #endif

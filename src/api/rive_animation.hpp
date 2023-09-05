@@ -11,20 +11,27 @@
 // rive-cpp
 #include <rive/animation/linear_animation_instance.hpp>
 
+// extension
+#include "utils/types.hpp"
+
 using namespace godot;
 
 class RiveAnimation : public Resource {
     GDCLASS(RiveAnimation, Resource);
+    friend class RiveController;
+    friend class RiveInstance;
 
    private:
     rive::ArtboardInstance *artboard;
-    rive::LinearAnimationInstance *animation;
+    Ptr<rive::LinearAnimationInstance> animation;
     int index = -1;
+    String name = "";
 
    protected:
     static void _bind_methods() {
         ClassDB::bind_method(D_METHOD("exists"), &RiveAnimation::exists);
         ClassDB::bind_method(D_METHOD("get_index"), &RiveAnimation::get_index);
+        ClassDB::bind_method(D_METHOD("get_name"), &RiveAnimation::get_name);
         ClassDB::bind_method(D_METHOD("get_duration"), &RiveAnimation::get_duration);
         ClassDB::bind_method(D_METHOD("get_current_time"), &RiveAnimation::get_current_time);
         ClassDB::bind_method(D_METHOD("get_current_direction"), &RiveAnimation::get_current_direction);
@@ -33,13 +40,17 @@ class RiveAnimation : public Resource {
 
    public:
     static Ref<RiveAnimation> MakeRef(
-        rive::ArtboardInstance *artboard_value, rive::LinearAnimationInstance *animation_value, int index_value = -1
+        rive::ArtboardInstance *artboard_value,
+        Ptr<rive::LinearAnimationInstance> animation_value,
+        int index_value,
+        String name_value
     ) {
         if (!artboard_value || !animation_value) return nullptr;
         Ref<RiveAnimation> obj = memnew(RiveAnimation);
         obj->artboard = artboard_value;
-        obj->animation = animation_value;
+        obj->animation = std::move(animation_value);
         obj->index = index_value;
+        obj->name = name_value;
         return obj;
     }
 
@@ -51,6 +62,10 @@ class RiveAnimation : public Resource {
 
     int get_index() const {
         return index;
+    }
+
+    String get_name() const {
+        return name;
     }
 
     float get_duration() const {

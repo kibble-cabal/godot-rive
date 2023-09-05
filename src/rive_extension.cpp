@@ -24,11 +24,14 @@ bool is_editor_hint() {
     return Engine::get_singleton()->is_editor_hint();
 }
 
-void RiveViewer::_init() {
-    props.on_artboard_changed([this](int index) -> void { _on_artboard_changed(index); });
-    props.on_scene_changed([this](int index) -> void { _on_scene_changed(index); });
-    props.on_animation_changed([this](int index) -> void { _on_animation_changed(index); });
-    props.on_path_changed([this](String path) -> void { _on_path_changed(path); });
+RiveViewer::RiveViewer() {
+    inst.set_props(&props);
+    sk.set_props(&props);
+    props.on_artboard_changed([this](int index) { _on_artboard_changed(index); });
+    props.on_scene_changed([this](int index) { _on_scene_changed(index); });
+    props.on_animation_changed([this](int index) { _on_animation_changed(index); });
+    props.on_path_changed([this](String path) { _on_path_changed(path); });
+    props.on_size_changed([this](float w, float h) { _on_size_changed(w, h); });
 }
 
 void RiveViewer::_bind_methods() {
@@ -75,6 +78,9 @@ void RiveViewer::_bind_methods() {
         "set_disable_hover",
         "get_disable_hover"
     );
+    ClassDB::bind_method(D_METHOD("get_paused"), &RiveViewer::get_paused);
+    ClassDB::bind_method(D_METHOD("set_paused", "value"), &RiveViewer::set_paused);
+    ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL, "paused"), "set_paused", "get_paused");
 
     /* Signals */
     ADD_SIGNAL(MethodInfo("pressed", PropertyInfo(Variant::VECTOR2, "position")));
@@ -96,42 +102,40 @@ void RiveViewer::_bind_methods() {
     ClassDB::bind_method(D_METHOD("go_to_artboard", "artboard"), &RiveViewer::go_to_artboard);
     ClassDB::bind_method(D_METHOD("go_to_scene", "scene"), &RiveViewer::go_to_scene);
     ClassDB::bind_method(D_METHOD("go_to_animation", "animation"), &RiveViewer::go_to_animation);
+    ClassDB::bind_method(D_METHOD("press_mouse", "position"), &RiveViewer::press_mouse);
+    ClassDB::bind_method(D_METHOD("release_mouse", "position"), &RiveViewer::release_mouse);
+    ClassDB::bind_method(D_METHOD("move_mouse", "position"), &RiveViewer::move_mouse);
 }
 
 void RiveViewer::_gui_input(const Ref<InputEvent> &event) {
     auto mouse_event = dynamic_cast<InputEventMouse *>(event.ptr());
-    if (!mouse_event || !controller || is_editor_hint()) return;
+    if (!mouse_event || is_editor_hint()) return;
 
-    rive::Vec2D pos = rive::Vec2D(mouse_event->get_position().x, mouse_event->get_position().y);
+    Vector2 pos = mouse_event->get_position();
 
     if (auto mouse_button = dynamic_cast<InputEventMouseButton *>(event.ptr())) {
         if (!props.disable_press() && mouse_button->is_pressed()) {
-            controller->pointer_down(pos);
+            inst.press_mouse(pos);
             emit_signal("pressed", mouse_event->get_position());
         } else if (!props.disable_press() && mouse_button->is_released()) {
-            controller->pointer_up(pos);
+            inst.release_mouse(pos);
             emit_signal("released", mouse_event->get_position());
         }
     }
     if (auto mouse_motion = dynamic_cast<InputEventMouseMotion *>(event.ptr())) {
-        if (!props.disable_hover()) controller->pointer_move(pos);
+        if (!props.disable_hover()) inst.move_mouse(pos);
     }
 }
 
 void RiveViewer::_draw() {
-    if (!is_null(texture)) {
-        draw_texture_rect(texture, Rect2(0, 0, width(), height()), false);
-    }
+    if (!is_null(texture)) draw_texture_rect(texture, Rect2(0, 0, width(), height()), false);
 }
 
 void RiveViewer::_process(float delta) {
-    if (is_node_ready() && controller) {
+    if (is_node_ready() && !props.paused()) {
         if (is_null(image)) image = Image::create(width(), height(), false, IMAGE_FORMAT);
         if (is_null(texture)) texture = ImageTexture::create_from_image(image);
-        controller->is_visible = is_visible();
-        PackedByteArray bytes;
-        if (is_editor_hint()) bytes = controller->editor_frame(delta);
-        else bytes = controller->frame(delta);
+        PackedByteArray bytes = frame(delta);
         if (bytes.size()) {
             image->set_data(width(), height(), false, IMAGE_FORMAT, bytes);
             texture->update(image);
@@ -144,28 +148,26 @@ void RiveViewer::_process(float delta) {
 void RiveViewer::_notification(int what) {
     switch (what) {
         case NOTIFICATION_RESIZED:
-            _on_resize();
+            props.size(width(), height());
     }
 }
 
 void RiveViewer::_ready() {
-    _on_resize();
+    elapsed = 0.0;
+    props.size(width(), height());
 }
 
 void RiveViewer::check_scene_property_changed() {
     if (props.disable_hover() && props.disable_press()) return;  // Don't bother checking if input is disabled
-    if (controller && !is_null(controller->scene_wrapper)) {
-        auto inputs = controller->scene_wrapper->get_inputs();
-        for (int i = 0; i < inputs.size(); i++) {
-            Ref<RiveInput> input = inputs[i];
+    auto scene = inst.scene();
+    if (exists(scene))
+        scene->inputs.for_each([this, scene](Ref<RiveInput> input, int _) {
             String prop = input->get_name();
             Variant old_value = cached_scene_property_values.get(prop, input->get_default());
             Variant new_value = input->get_value();
-            if (old_value != new_value)
-                emit_signal("scene_property_changed", controller->scene_wrapper, prop, new_value, old_value);
+            if (old_value != new_value) emit_signal("scene_property_changed", scene, prop, new_value, old_value);
             cached_scene_property_values[prop] = new_value;
-        }
-    }
+        });
 }
 
 int RiveViewer::width() {
@@ -176,50 +178,39 @@ int RiveViewer::height() {
     return std::max(get_size().y, (real_t)1);
 }
 
-void RiveViewer::_on_resize() {
-    props.size(width(), height());
-    if (!is_null(image)) unref(image);
-    if (!is_null(texture)) unref(texture);
-    image = Image::create(width(), height(), false, IMAGE_FORMAT);
-    texture = ImageTexture::create_from_image(image);
-}
-
 void RiveViewer::_on_path_changed(String path) {
-    if (is_editor_hint()) notify_property_list_changed();
-}
-
-void RiveViewer::_get_property_list(List<PropertyInfo> *list) const {
-    if (controller) {
-        String artboard_hint = controller->get_artboard_property_hint();
-        list->push_back(PropertyInfo(Variant::INT, "artboard", PROPERTY_HINT_ENUM, artboard_hint));
-        if (props.artboard() != -1) {
-            String scene_hint = controller->get_scene_property_hint();
-            list->push_back(PropertyInfo(Variant::INT, "scene", PROPERTY_HINT_ENUM, scene_hint));
-            list->push_back(PropertyInfo(
-                Variant::INT,
-                "animation",
-                PROPERTY_HINT_ENUM,
-                controller->get_animation_property_hint(),
-                (props.scene() != -1) ? (PROPERTY_USAGE_DEFAULT & PROPERTY_USAGE_READ_ONLY) : PROPERTY_USAGE_DEFAULT
-            ));
-        }
-        if (props.scene() != -1) {
-            list->push_back(PropertyInfo(Variant::NIL, "Scene", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_CATEGORY));
-            controller->get_scene_property_list(list);
-        }
+    try {
+        inst.file = RiveFile::Load(path, sk.factory.get());
+        GDPRINT("Successfully imported <", path, ">!");
+    } catch (RiveException error) {
+        error.report();
+    }
+    if (exists(inst.file)) {
+        _on_size_changed(props.width(), props.height());
+        if (is_editor_hint()) notify_property_list_changed();
     }
 }
 
-void RiveViewer::set_file_path(String value) {
-    props.path(value);
-}
-
-void RiveViewer::set_fit(int value) {
-    props.fit((Fit)value);
-}
-
-void RiveViewer::set_alignment(int value) {
-    props.alignment((Align)value);
+void RiveViewer::_get_property_list(List<PropertyInfo> *list) const {
+    if (is_node_ready()) {
+        inst.instantiate();
+        if (exists(inst.file)) {
+            String artboard_hint = inst.file->_get_artboard_property_hint();
+            list->push_back(PropertyInfo(Variant::INT, "artboard", PROPERTY_HINT_ENUM, artboard_hint));
+        }
+        auto artboard = inst.artboard();
+        if (exists(artboard)) {
+            String scene_hint = artboard->_get_scene_property_hint();
+            list->push_back(PropertyInfo(Variant::INT, "scene", PROPERTY_HINT_ENUM, scene_hint));
+            String anim_hint = artboard->_get_animation_property_hint();
+            list->push_back(PropertyInfo(Variant::INT, "animation", PROPERTY_HINT_ENUM, anim_hint));
+        }
+        auto scene = inst.scene();
+        if (exists(scene)) {
+            list->push_back(PropertyInfo(Variant::NIL, "Scene", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_CATEGORY));
+            scene->_get_input_property_list(list);
+        }
+    }
 }
 
 void RiveViewer::_on_artboard_changed(int _index) {
@@ -242,14 +233,6 @@ void RiveViewer::_on_animation_changed(int _index) {
     }
 }
 
-void RiveViewer::set_disable_press(bool value) {
-    props.disable_press(value);
-}
-
-void RiveViewer::set_disable_hover(bool value) {
-    props.disable_hover(value);
-}
-
 bool RiveViewer::_set(const StringName &prop, const Variant &value) {
     String name = prop;
     if (name == "artboard") {
@@ -264,7 +247,7 @@ bool RiveViewer::_set(const StringName &prop, const Variant &value) {
         props.animation((int)value);
         return true;
     }
-    if (controller && controller->get_scene_property_names().has(name)) {
+    if (exists(inst.scene()) && inst.scene()->get_input_names().has(name)) {
         props.scene_property(name, value);
         return true;
     }
@@ -292,29 +275,53 @@ bool RiveViewer::_get(const StringName &prop, Variant &return_value) const {
     return false;
 }
 
+void RiveViewer::_on_size_changed(float w, float h) {
+    if (sk.renderer) sk.renderer->transform(inst.get_transform());
+    if (!is_null(image)) unref(image);
+    if (!is_null(texture)) unref(texture);
+    image = Image::create(width(), height(), false, IMAGE_FORMAT);
+    texture = ImageTexture::create_from_image(image);
+}
+
+bool RiveViewer::advance(float delta) {
+    elapsed += delta;
+    return inst.advance(delta);
+}
+
+PackedByteArray RiveViewer::redraw() {
+    auto artboard = inst.artboard();
+    if (sk.surface && sk.renderer && exists(artboard)) {
+        sk.clear();
+        inst.draw(sk.renderer.get());
+        return sk.bytes();
+    }
+    return PackedByteArray();
+}
+
+PackedByteArray RiveViewer::frame(float delta) {
+    if (!exists(inst.file) || !exists(inst.artboard()) || !sk.renderer || !sk.surface) return PackedByteArray();
+    if (advance(delta) && is_visible()) return redraw();
+    return PackedByteArray();
+}
+
 float RiveViewer::get_elapsed_time() const {
-    if (controller) return controller->elapsed;
-    return 0.0;
+    return elapsed;
 }
 
 Ref<RiveFile> RiveViewer::get_file() const {
-    if (controller) return controller->file_wrapper;
-    return nullptr;
+    return inst.file;
 }
 
 Ref<RiveArtboard> RiveViewer::get_artboard() const {
-    if (controller) return controller->artboard_wrapper;
-    return nullptr;
+    return inst.artboard();
 }
 
 Ref<RiveScene> RiveViewer::get_scene() const {
-    if (controller) return controller->scene_wrapper;
-    return nullptr;
+    return inst.scene();
 }
 
 Ref<RiveAnimation> RiveViewer::get_animation() const {
-    if (controller) return controller->animation_wrapper;
-    return nullptr;
+    return inst.animation();
 }
 
 void RiveViewer::go_to_artboard(Ref<RiveArtboard> artboard_value) {
@@ -349,4 +356,16 @@ void RiveViewer::go_to_animation(Ref<RiveAnimation> animation_value) {
     } catch (RiveException error) {
         error.report();
     }
+}
+
+void RiveViewer::press_mouse(Vector2 position) {
+    inst.press_mouse(position);
+}
+
+void RiveViewer::release_mouse(Vector2 position) {
+    inst.release_mouse(position);
+}
+
+void RiveViewer::move_mouse(Vector2 position) {
+    inst.move_mouse(position);
 }

@@ -14,11 +14,11 @@
 using namespace godot;
 using namespace std;
 
-enum Fit { FILL = 1, CONTAIN = 2, COVER = 3, FIT_WIDTH = 4, FIT_HEIGHT = 5, NONE = 6, SCALE_DOWN = 9 };
+enum FIT { FILL = 1, CONTAIN = 2, COVER = 3, FIT_WIDTH = 4, FIT_HEIGHT = 5, NONE = 6, SCALE_DOWN = 9 };
 
 static const char *FitEnumPropertyHint = "Fill:1,Contain:2,Cover:3,FitWidth:4,FitHeight:5,None:6,ScaleDown:7";
 
-enum Align {
+enum ALIGN {
     TOP_LEFT = 1,
     TOP_CENTER = 2,
     TOP_RIGHT = 3,
@@ -33,45 +33,45 @@ enum Align {
 static const char *AlignEnumPropertyHint
     = "TopLeft:1,TopCenter:2,TopRight:3,CenterLeft:4,Center:5,CenterRight:6,BottomLeft:7,BottomCenter:8,BottomRight:9";
 
-static rive::Fit convert(Fit fit) {
+static rive::Fit convert(FIT fit) {
     switch (fit) {
-        case Fit::COVER:
+        case FIT::COVER:
             return rive::Fit::cover;
-        case Fit::FILL:
+        case FIT::FILL:
             return rive::Fit::fill;
-        case Fit::FIT_HEIGHT:
+        case FIT::FIT_HEIGHT:
             return rive::Fit::fitHeight;
-        case Fit::FIT_WIDTH:
+        case FIT::FIT_WIDTH:
             return rive::Fit::fitWidth;
-        case Fit::NONE:
+        case FIT::NONE:
             return rive::Fit::none;
-        case Fit::SCALE_DOWN:
+        case FIT::SCALE_DOWN:
             return rive::Fit::scaleDown;
-        case Fit::CONTAIN:
+        case FIT::CONTAIN:
         default:
             return rive::Fit::contain;
     }
 }
 
-static rive::Alignment convert(Align alignment) {
+static rive::Alignment convert(ALIGN alignment) {
     switch (alignment) {
-        case Align::BOTTOM_CENTER:
+        case ALIGN::BOTTOM_CENTER:
             return rive::Alignment::bottomCenter;
-        case Align::BOTTOM_LEFT:
+        case ALIGN::BOTTOM_LEFT:
             return rive::Alignment::bottomLeft;
-        case Align::BOTTOM_RIGHT:
+        case ALIGN::BOTTOM_RIGHT:
             return rive::Alignment::bottomRight;
-        case Align::CENTER:
+        case ALIGN::CENTER:
             return rive::Alignment::center;
-        case Align::CENTER_LEFT:
+        case ALIGN::CENTER_LEFT:
             return rive::Alignment::centerLeft;
-        case Align::CENTER_RIGHT:
+        case ALIGN::CENTER_RIGHT:
             return rive::Alignment::centerRight;
-        case Align::TOP_CENTER:
+        case ALIGN::TOP_CENTER:
             return rive::Alignment::topCenter;
-        case Align::TOP_RIGHT:
+        case ALIGN::TOP_RIGHT:
             return rive::Alignment::topRight;
-        case Align::TOP_LEFT:
+        case ALIGN::TOP_LEFT:
         default:
             return rive::Alignment::topLeft;
     }
@@ -81,14 +81,14 @@ template <typename... Args>
 using Callback = function<void(Args...)>;
 
 template <typename... Args>
-struct Event {
+struct PropEvent {
     std::vector<Callback<Args...>> listeners;
 
     void subscribe(Callback<Args...> listener) {
         listeners.push_back(listener);
     }
 
-    void emit(Args... args) {
+    void emit(Args... args) const {
         for (int i = 0; i < listeners.size(); i++) {
             auto listener = listeners[i];
             listener(args...);
@@ -103,20 +103,22 @@ struct ViewerProps {
     int _height = 1;
     bool _disable_press = false;
     bool _disable_hover = false;
+    bool _paused = false;
     int _artboard = -1;
     int _scene = -1;
     int _animation = -1;
     Dictionary _scene_properties;
-    Fit _fit = Fit::CONTAIN;
-    Align _alignment = Align::CENTER;
+    FIT _fit = FIT::CONTAIN;
+    ALIGN _alignment = ALIGN::CENTER;
 
     /* Events */
-    Event<String> path_changed;
-    Event<> property_changed;
-    Event<> scene_properties_changed;
-    Event<int> artboard_changed;
-    Event<int> scene_changed;
-    Event<int> animation_changed;
+    PropEvent<String> path_changed;
+    PropEvent<> property_changed;
+    PropEvent<> scene_properties_changed;
+    PropEvent<int> artboard_changed;
+    PropEvent<int> scene_changed;
+    PropEvent<int> animation_changed;
+    PropEvent<float, float> size_changed;
 
    public:
     /* Event handlers */
@@ -144,6 +146,10 @@ struct ViewerProps {
         animation_changed.subscribe(callback);
     }
 
+    void on_size_changed(Callback<float, float> callback) {
+        size_changed.subscribe(callback);
+    }
+
     /* Getters */
 
     String path() const {
@@ -151,11 +157,11 @@ struct ViewerProps {
     }
 
     int width() const {
-        return _width;
+        return std::max(_width, 1);
     }
 
     int height() const {
-        return _height;
+        return std::max(_height, 1);
     }
 
     int artboard() const {
@@ -170,7 +176,7 @@ struct ViewerProps {
         return _animation;
     }
 
-    Fit fit() const {
+    FIT fit() const {
         return _fit;
     }
 
@@ -178,7 +184,7 @@ struct ViewerProps {
         return convert(_fit);
     }
 
-    Align alignment() const {
+    ALIGN alignment() const {
         return _alignment;
     }
 
@@ -192,6 +198,10 @@ struct ViewerProps {
 
     bool disable_hover() const {
         return _disable_hover;
+    }
+
+    bool paused() const {
+        return _paused;
     }
 
     Dictionary scene_properties() const {
@@ -219,14 +229,14 @@ struct ViewerProps {
     void width(int value) {
         if (value != _width) {
             _width = value;
-            property_changed.emit();
+            size_changed.emit(_width, _height);
         }
     }
 
     void height(int value) {
         if (value != _height) {
             _height = value;
-            property_changed.emit();
+            size_changed.emit(_width, _height);
         }
     }
 
@@ -234,6 +244,7 @@ struct ViewerProps {
         if (_width != w || _height != h) {
             _width = w, _height = h;
             property_changed.emit();
+            size_changed.emit(_width, _height);
         }
     }
 
@@ -261,14 +272,14 @@ struct ViewerProps {
         }
     }
 
-    void fit(Fit value) {
+    void fit(FIT value) {
         if (value != _fit) {
             _fit = value;
             property_changed.emit();
         }
     }
 
-    void alignment(Align value) {
+    void alignment(ALIGN value) {
         _alignment = value;
         property_changed.emit();
     }
@@ -283,6 +294,13 @@ struct ViewerProps {
     void disable_hover(bool value) {
         if (_disable_hover != value) {
             _disable_hover = value;
+            property_changed.emit();
+        }
+    }
+
+    void paused(bool value) {
+        if (_paused != value) {
+            _paused = value;
             property_changed.emit();
         }
     }

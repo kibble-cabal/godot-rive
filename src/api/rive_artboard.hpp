@@ -25,16 +25,36 @@ using namespace godot;
 class RiveArtboard : public Resource {
     GDCLASS(RiveArtboard, Resource);
 
-   private:
-    rive::File *file;
-    rive::ArtboardInstance *artboard;
-    TypedArray<RiveScene> scenes;
-    TypedArray<RiveAnimation> animations;
-    rive::Mat2D inverse_transform;
-    int index = -1;
-
     friend class RiveFile;
     friend class RiveController;
+    friend class RiveInstance;
+    friend class RiveViewer;
+
+   private:
+    rive::File *file;
+    Ptr<rive::ArtboardInstance> artboard;
+    String name = "";
+    int index = -1;
+
+    Instances<RiveScene> scenes = Instances<RiveScene>([this](int index) -> Ref<RiveScene> {
+        if (!exists() || index < 0 || index >= artboard->stateMachineCount()) return nullptr;
+        return RiveScene::MakeRef(
+            artboard.get(),
+            artboard->stateMachineAt(index),
+            index,
+            artboard->stateMachineNameAt(index).c_str()
+        );
+    });
+
+    Instances<RiveAnimation> animations = Instances<RiveAnimation>([this](int index) -> Ref<RiveAnimation> {
+        if (!exists() || index < 0 || index >= artboard->animationCount()) return nullptr;
+        return RiveAnimation::MakeRef(
+            artboard.get(),
+            artboard->animationAt(index),
+            index,
+            artboard->animationNameAt(index).c_str()
+        );
+    });
 
    protected:
     static void _bind_methods() {
@@ -43,56 +63,65 @@ class RiveArtboard : public Resource {
         ClassDB::bind_method(D_METHOD("get_name"), &RiveArtboard::get_name);
         ClassDB::bind_method(D_METHOD("get_scenes"), &RiveArtboard::get_scenes);
         ClassDB::bind_method(D_METHOD("get_scene_count"), &RiveArtboard::get_scene_count);
+        ClassDB::bind_method(D_METHOD("get_scene_names"), &RiveArtboard::get_scene_names);
         ClassDB::bind_method(D_METHOD("get_animations"), &RiveArtboard::get_animations);
         ClassDB::bind_method(D_METHOD("get_animation_count"), &RiveArtboard::get_animation_count);
+        ClassDB::bind_method(D_METHOD("get_animation_names"), &RiveArtboard::get_animation_names);
         ClassDB::bind_method(D_METHOD("get_bounds"), &RiveArtboard::get_bounds);
         ClassDB::bind_method(D_METHOD("get_scene", "index"), &RiveArtboard::get_scene);
         ClassDB::bind_method(D_METHOD("find_scene", "name"), &RiveArtboard::find_scene);
         ClassDB::bind_method(D_METHOD("get_animation", "index"), &RiveArtboard::get_animation);
+        ClassDB::bind_method(D_METHOD("find_animation", "name"), &RiveArtboard::find_animation);
+        ClassDB::bind_method(D_METHOD("reset_animation", "index"), &RiveArtboard::reset_animation);
         ClassDB::bind_method(D_METHOD("get_world_transform"), &RiveArtboard::get_world_transform);
         ClassDB::bind_method(D_METHOD("queue_redraw"), &RiveArtboard::queue_redraw);
     }
 
-    void set_inverse_transform(rive::Mat2D value) {
-        inverse_transform = value;
-        for (int i = 0; i < get_scene_count(); i++) {
-            Ref<RiveScene> scene = scenes[i];
-            scene->inverse_transform = value;
-        }
+    void _instantiate_scenes() {
+        if (exists())
+            for (int i = 0; i < artboard->stateMachineCount(); i++) {
+                auto scene = get_scene(i);
+                if (scene.is_null() || !scene->exists()) throw RiveException("Failed to instantiate scene.");
+            }
     }
 
-    void cache_scenes() {
-        scenes.clear();
-        if (artboard) {
-            int size = artboard->stateMachineCount();
-            scenes.resize(size);
-            for (int i = 0; i < size; i++)
-                scenes[i] = RiveScene::MakeRef(artboard, artboard->stateMachineAt(i).get(), i);
-        }
-        set_inverse_transform(inverse_transform);
+    void _instantiate_animations() {
+        if (exists())
+            for (int i = 0; i < artboard->animationCount(); i++) {
+                auto animation = get_animation(i);
+                if (animation.is_null() || !animation->exists())
+                    throw RiveException("Failed to instantiate animation.");
+            }
     }
 
-    void cache_animations() {
-        animations.clear();
-        if (artboard) {
-            int size = artboard->animationCount();
-            animations.resize(size);
-            for (int i = 0; i < size; i++)
-                animations[i] = RiveAnimation::MakeRef(artboard, artboard->animationAt(i).get(), i);
-        }
+    String _get_scene_property_hint() const {
+        PackedStringArray hints;
+        hints.append("None:-1");
+        scenes.for_each([&hints](Ref<RiveScene> scene, int index) {
+            hints.append(scene->get_name() + ":" + std::to_string(index).c_str());
+        });
+        return String(",").join(hints);
+    }
+
+    String _get_animation_property_hint() const {
+        PackedStringArray hints;
+        hints.append("None:-1");
+        animations.for_each([&hints](Ref<RiveAnimation> animation, int index) {
+            hints.append(animation->get_name() + ":" + std::to_string(index).c_str());
+        });
+        return String(",").join(hints);
     }
 
    public:
     static Ref<RiveArtboard> MakeRef(
-        rive::File *file_value, rive::ArtboardInstance *artboard_value, int index_value = -1
+        rive::File *file_value, Ptr<rive::ArtboardInstance> artboard_value, int index_value, String name_value
     ) {
         if (!file_value || !artboard_value) return nullptr;
         Ref<RiveArtboard> obj = memnew(RiveArtboard);
         obj->file = file_value;
-        obj->artboard = artboard_value;
+        obj->artboard = std::move(artboard_value);
         obj->index = index_value;
-        obj->cache_scenes();
-        obj->cache_animations();
+        obj->name = name_value;
         return obj;
     }
 
@@ -107,23 +136,35 @@ class RiveArtboard : public Resource {
     }
 
     String get_name() const {
-        return artboard ? artboard->name().c_str() : String();
+        return name;
     }
 
     int get_scene_count() const {
-        return scenes.size();
+        return scenes.get_size();
     }
 
     int get_animation_count() const {
-        return animations.size();
+        return animations.get_size();
     }
 
     TypedArray<RiveScene> get_scenes() const {
-        return scenes;
+        return scenes.get_list();
     }
 
     TypedArray<RiveAnimation> get_animations() const {
-        return animations;
+        return animations.get_list();
+    }
+
+    PackedStringArray get_scene_names() const {
+        PackedStringArray names;
+        scenes.for_each([&names](Ref<RiveScene> scene, int _) { names.append(scene->get_name()); });
+        return names;
+    }
+
+    PackedStringArray get_animation_names() const {
+        PackedStringArray names;
+        animations.for_each([&names](Ref<RiveAnimation> animation, int _) { names.append(animation->get_name()); });
+        return names;
     }
 
     Rect2 get_bounds() const {
@@ -144,22 +185,28 @@ class RiveArtboard : public Resource {
         return Transform2D();
     }
 
-    Ref<RiveScene> get_scene(int index) const {
-        if (index >= 0 && index < get_scene_count()) return scenes[index];
-        return nullptr;
+    Ref<RiveScene> get_scene(int index) {
+        return scenes.get(index);
     }
 
     Ref<RiveScene> find_scene(String name) const {
-        for (int i = 0; i < get_scene_count(); i++) {
-            Ref<RiveScene> scene = scenes[i];
-            if (scene->get_name() == name) return scene;
-        }
-        return nullptr;
+        return scenes.find([name](Ref<RiveScene> scene, int i) { return scene->get_name() == name; });
     }
 
-    Ref<RiveAnimation> get_animation(int index) const {
-        if (index >= 0 && index < get_animation_count()) return animations[index];
-        return nullptr;
+    Ref<RiveScene> reset_scene(int index) {
+        return scenes.reinstantiate(index);
+    }
+
+    Ref<RiveAnimation> get_animation(int index) {
+        return animations.get(index);
+    }
+
+    Ref<RiveAnimation> find_animation(String name) const {
+        return animations.find([name](Ref<RiveAnimation> animation, int i) { return animation->get_name() == name; });
+    }
+
+    Ref<RiveAnimation> reset_animation(int index) {
+        return animations.reinstantiate(index);
     }
 
     void queue_redraw() {

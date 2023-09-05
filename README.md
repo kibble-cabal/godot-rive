@@ -51,8 +51,9 @@ python build.py --help
 - [x] Add signals for event listeners (hover, pressed, etc)
 - [x] Disable/enable event listeners (hover, pressed, etc) in API and editor
 - [x] Optimization
-- [x] Editor preview
-- [ ] Windows/Linux support
-- [ ] iOS/Android support
+- [x] Static editor preview
+- [x] Animated editor preview
+- [ ] Add reset button
+- [ ] `.riv` ResourceLoader (thumbnails)
+- [ ] Other platform support
 - [ ] Any missing features
-- [ ] `.riv` ResourceLoade (thumbnails)

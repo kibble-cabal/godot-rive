@@ -1,12 +1,12 @@
 # Godot Rive
 
-### An integration of Rive into Godot using GDExtension
+### An integration of Rive into Godot 4.1+ using GDExtension
 
-> **Important**
+> [!WARNING]
 > This extension is in **alpha**. That means:
-> * Most features are implemented
 > * You may encounter some bugs
 > * It's untested on many platforms
+> * Most features are implemented, but the API may change a little
 
 This extensions adds [Rive](https://rive.app) support to Godot 4.
 
@@ -33,11 +33,11 @@ It makes use of the following third-party libraries:
 
 ## Building
 
-> **Warning**
+> [!IMPORTANT]
 > These instructions are only tested on M1 MacOS. You may have to modify `build/build.py` or `build/SConstruct` for your system.
 
 The following must be installed:
-- Python
+- Python 3
 - [git](https://git-scm.com/)
 - [scons](https://scons.org/)
 - [ninja](https://ninja-build.org/)
@@ -55,10 +55,11 @@ python build.py --help
 
 ## Installation
 
-> **Important**
+> [!IMPORTANT]
 > If you are not on M1 MacOS, you will need to build the extension yourself. Binaries are only provided for MacOS universal (debug and release).
+> Eventually, binaries will be provided for other platforms.
 
-1. Create a folder in your project called `bin`, and copy the contents of `demo/bin` into the new folder
+1. Copy `demo/bin/`, `demo/icons/`, and `demo/rive.gdextension` to your project folder
 2. Update the paths in `rive.gdextension` to match your project folder structure
 
 ## Roadmap

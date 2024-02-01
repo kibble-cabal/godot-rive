@@ -12,7 +12,7 @@
 // rive
 #include <rive/factory.hpp>
 #include <rive/file.hpp>
-#include <rive/file_asset_resolver.hpp>
+#include <rive/file_asset_loader.hpp>
 #include <rive/span.hpp>
 
 #include "rive_exceptions.hpp"

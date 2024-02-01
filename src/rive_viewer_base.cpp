@@ -203,6 +203,12 @@ void RiveViewerBase::_on_size_changed(float w, float h) {
 
 void RiveViewerBase::_on_transform_changed() {
     if (sk.renderer) sk.renderer->transform(inst.current_transform);
+    PackedByteArray bytes = frame(0.0);
+    if (bytes.size()) {
+        image->set_data(width(), height(), false, IMAGE_FORMAT, bytes);
+        texture->update(image);
+        owner->queue_redraw();
+    }
 }
 
 bool RiveViewerBase::advance(float delta) {

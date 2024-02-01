@@ -27,6 +27,7 @@ class RiveViewer : public Control {
                 break;
             case NOTIFICATION_RESIZED:
                 base.set_size(get_size());
+                break;
         }
     }
 

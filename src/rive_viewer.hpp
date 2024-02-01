@@ -21,6 +21,10 @@ class RiveViewer : public Control {
    public:
     void _notification(int what) {
         switch (what) {
+            case NOTIFICATION_INTERNAL_PROCESS:
+            case NOTIFICATION_PROCESS:
+                base.on_process(get_process_delta_time());
+                break;
             case NOTIFICATION_RESIZED:
                 base.set_size(get_size());
         }

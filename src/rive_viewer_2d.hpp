@@ -20,6 +20,15 @@ class RiveViewer2D : public Node2D {
     }
 
    public:
+    void _notification(int what) {
+        switch (what) {
+            case NOTIFICATION_INTERNAL_PROCESS:
+            case NOTIFICATION_PROCESS:
+                base.on_process(get_process_delta_time());
+                break;
+        }
+    }
+
     void _input(const Ref<InputEvent> &event) override {
         base.on_input_event(event);
     }

@@ -216,10 +216,8 @@ class RiveViewerBase {
     void _draw() override {                                                  \
         base.on_draw();                                                      \
     }                                                                        \
-    void _process(float delta) {                                             \
-        base.on_process(delta);                                              \
-    }                                                                        \
     void _ready() override {                                                 \
+        set_process_internal(true);                                          \
         base.on_ready();                                                     \
     }                                                                        \
     void _get_property_list(List<PropertyInfo> *list) const {                \

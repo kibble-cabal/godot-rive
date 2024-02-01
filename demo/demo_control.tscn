@@ -1,0 +1,37 @@
+[gd_scene load_steps=2 format=3 uid="uid://b0uivr6mrq7ww"]
+
+[ext_resource type="Script" path="res://demo_control.gd" id="1_hl33n"]
+
+[node name="DemoControl" type="VBoxContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_hl33n")
+
+[node name="Label" type="Label" parent="."]
+custom_minimum_size = Vector2(2.08165e-12, 50)
+layout_mode = 2
+text = "Increase the number of rooms:"
+vertical_alignment = 1
+
+[node name="HSlider" type="HSlider" parent="."]
+custom_minimum_size = Vector2(2.08165e-12, 50)
+layout_mode = 2
+min_value = 3.0
+max_value = 6.0
+value = 3.0
+tick_count = 4
+
+[node name="RiveViewer" type="RiveViewer" parent="."]
+file_path = "res://examples/house_resizing.riv"
+artboard = 0
+scene = 0
+animation = -1
+Rooms = 1.0
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[connection signal="value_changed" from="HSlider" to="." method="_on_h_slider_value_changed"]

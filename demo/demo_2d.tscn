@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://csjogywv8ip7t"]
+
+[node name="Demo2D" type="Node2D"]
+position = Vector2(20, 30)
+rotation = -0.0872665
+
+[node name="RiveViewer2D" type="RiveViewer2D" parent="."]
+file_path = "res://examples/tape.riv"
+size = Vector2(600, 600)
+artboard = 0
+scene = -1
+animation = 0
+position = Vector2(20, 20)

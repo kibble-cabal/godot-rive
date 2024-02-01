@@ -25,8 +25,7 @@ using namespace godot;
 class RiveFile : public Resource {
     GDCLASS(RiveFile, Resource);
 
-    friend class RiveViewer;
-    friend class RiveController;
+    friend class RiveViewerBase;
     friend class RiveInstance;
 
    private:

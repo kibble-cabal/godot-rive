@@ -26,9 +26,8 @@ class RiveArtboard : public Resource {
     GDCLASS(RiveArtboard, Resource);
 
     friend class RiveFile;
-    friend class RiveController;
     friend class RiveInstance;
-    friend class RiveViewer;
+    friend class RiveViewerBase;
 
    private:
     rive::File *file;

@@ -18,7 +18,6 @@ using namespace godot;
 
 class RiveAnimation : public Resource {
     GDCLASS(RiveAnimation, Resource);
-    friend class RiveController;
     friend class RiveInstance;
 
    private:

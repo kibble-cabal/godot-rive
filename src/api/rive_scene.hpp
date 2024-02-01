@@ -28,9 +28,8 @@ class RiveScene : public Resource {
     GDCLASS(RiveScene, Resource);
 
     friend class RiveArtboard;
-    friend class RiveController;
     friend class RiveInstance;
-    friend class RiveViewer;
+    friend class RiveViewerBase;
 
    private:
     rive::ArtboardInstance *artboard;

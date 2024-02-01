@@ -30,7 +30,7 @@
 #include "viewer_props.hpp"
 
 struct RiveInstance {
-    friend class RiveViewer;
+    friend class RiveViewerBase;
 
     ViewerProps *props;
     Ref<RiveFile> file;

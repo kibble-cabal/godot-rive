@@ -52,7 +52,7 @@ class RiveException : public exception {
 
     template <class GodotObject>
     RiveException from(GodotObject *calling_class_value, string calling_method_value) {
-        format_args["calling_class"] = calling_class_value->get_class_static();
+        format_args["calling_class"] = calling_class_value->get_class();
         format_args["calling_method"] = calling_method_value.c_str();
         return *this;
     }

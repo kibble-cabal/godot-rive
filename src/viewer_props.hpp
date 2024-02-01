@@ -97,7 +97,7 @@ struct PropEvent {
 };
 
 struct ViewerProps {
-    friend class RiveViewer;
+    friend class RiveViewerBase;
 
    private:
     String _path;
@@ -164,6 +164,10 @@ struct ViewerProps {
 
     int height() const {
         return std::max(_height, 1);
+    }
+
+    Vector2 size() const {
+        return Vector2(width(), height());
     }
 
     int artboard() const {

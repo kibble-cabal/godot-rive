@@ -67,7 +67,7 @@ def build_rive(platform: str, target: str):
     )
     print(f"---{LIGHT_GREY}")
     update_rive()
-    args = ["sh", "build.sh"]
+    args = ["sh", "build.bat"]
     if len(platform):
         args.append("-p")
         args.append(platform)
@@ -78,7 +78,7 @@ def build_rive(platform: str, target: str):
 def build_skia_dependencies() -> int:
     if not exists("../thirdparty/rive-cpp/skia/dependencies/skia"):
         return subprocess.call(
-            ["sh", "make_dependencies.sh"],
+            ["sh", "make_dependencies.bat"],
             cwd="../thirdparty/rive-cpp/skia/dependencies",
         )
     else:
@@ -96,7 +96,7 @@ def build_skia(platform: str, target: str):
     update_rive()
     code = build_skia_dependencies()
     if code == 0:
-        args = ["sh", "build.sh"]
+        args = ["sh", "build.bat"]
         if len(platform):
             args.append("-p")
             args.append(platform)
